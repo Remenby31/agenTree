@@ -8,7 +8,7 @@ async function main() {
       task: "What is 2+2?",
       config: {
         apiKey: "test-key",
-        model: "gpt-4",
+        model: "gpt-4o-mini",
         maxDepth: 2
       }
     });
