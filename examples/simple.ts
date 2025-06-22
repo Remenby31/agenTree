@@ -13,7 +13,8 @@ const agent = new Agent({
   config: {
     apiKey,
     model: "gpt-4o-mini",
-    maxDepth: 2
+    maxDepth: 2,
+    outputFile: true,
   }
 });
 

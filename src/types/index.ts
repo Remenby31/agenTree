@@ -16,6 +16,7 @@ export interface AgentConfig {
   config?: AgentTreeConfig;
   parentId?: string;
   depth?: number;
+  parentPath?: string;
 }
 
 export interface AgentResult {

@@ -19,6 +19,7 @@ import { OpenAIClient } from '../llm/OpenAIClient';
 import { ToolRegistry } from '../tools/ToolRegistry';
 import { CreateAgentParams } from '../tools/builtins/createAgent';
 import { StopAgentParams } from '../tools/builtins/stopAgent';
+import { StreamingOutputManager } from '../output/StreamingOutputManager';
 
 // Interface typée pour EventEmitter
 interface TypedEventEmitter {
@@ -41,6 +42,9 @@ export class Agent extends EventEmitter implements TypedEventEmitter {
   private children: Agent[] = [];
   private isCompleted: boolean = false;
   private result?: AgentResult;
+  
+  // Streaming output manager
+  private outputManager?: StreamingOutputManager;
 
   constructor(agentConfig: AgentConfig) {
     super();
@@ -59,6 +63,19 @@ export class Agent extends EventEmitter implements TypedEventEmitter {
     // Initialize builtin tools
     this.initializeBuiltinTools();
 
+    // Initialize streaming output manager
+    if (this.config.outputFile) {
+      this.outputManager = new StreamingOutputManager(
+        this.config,
+        this.id,
+        this.task.name,
+        this.task.description,
+        this.depth,
+        this.parentId,
+        agentConfig.parentPath // For child agents
+      );
+    }
+
     // Emit creation event
     this.emit('agentCreated', EventDataBuilder.createBaseEventData(this));
   }
@@ -66,21 +83,43 @@ export class Agent extends EventEmitter implements TypedEventEmitter {
   public async execute(): Promise<AgentResult> {
     const startTime = Date.now();
     
-    // Emit start event
-    this.emit('agentStarted', EventDataBuilder.createBaseEventData(this));
-    
     try {
+      // Initialize output files
+      if (this.outputManager) {
+        await this.outputManager.initialize();
+      }
+
+      // Emit start event
+      this.emit('agentStarted', EventDataBuilder.createBaseEventData(this));
+      
+      // Record start in output
+      if (this.outputManager) {
+        await this.outputManager.recordStart();
+      }
+      
       // Load context
       await this.task.loadContext();
       
       // Emit context loaded event
       this.emit('contextLoaded', EventDataBuilder.createContextLoadEventData(this, this.task.context));
       
+      // Record context loading
+      if (this.outputManager) {
+        await this.outputManager.recordContextLoaded(this.task.context);
+      }
+      
       // Initialize conversation
       this.messages = [
         { role: 'system', content: this.task.getSystemPrompt() },
         { role: 'user', content: this.task.getUserPrompt() }
       ];
+
+      // Record initial messages
+      if (this.outputManager) {
+        for (const message of this.messages) {
+          await this.outputManager.recordMessage(message);
+        }
+      }
       
       // Main execution loop
       while (!this.isCompleted) {
@@ -97,6 +136,11 @@ export class Agent extends EventEmitter implements TypedEventEmitter {
       
       // Emit completion event
       this.emit('agentCompleted', EventDataBuilder.createResultEventData(this, this.result, executionTime));
+      
+      // Record completion in output
+      if (this.outputManager) {
+        await this.outputManager.recordCompletion(this.result);
+      }
       
       return this.result;
       
@@ -115,6 +159,11 @@ export class Agent extends EventEmitter implements TypedEventEmitter {
       // Emit error event
       if (error instanceof Error) {
         this.emit('agentError', EventDataBuilder.createErrorEventData(this, error));
+        
+        // Record error in output
+        if (this.outputManager) {
+          await this.outputManager.recordError(error);
+        }
       }
 
       return errorResult;
@@ -132,6 +181,14 @@ export class Agent extends EventEmitter implements TypedEventEmitter {
       availableTools.map(t => t.name)
     ));
     
+    // Record LLM call in output
+    if (this.outputManager) {
+      await this.outputManager.recordLLMCall(
+        this.messages.length,
+        availableTools.map(t => t.name)
+      );
+    }
+    
     // Call LLM
     const response = await this.llmClient.chat(
       this.messages,
@@ -140,11 +197,18 @@ export class Agent extends EventEmitter implements TypedEventEmitter {
     );
     
     // Add assistant response to messages
-    this.messages.push({
+    const assistantMessage: LLMMessage = {
       role: 'assistant',
       content: response.content,
       tool_calls: response.tool_calls
-    });
+    };
+    
+    this.messages.push(assistantMessage);
+    
+    // Record assistant message in output immediately
+    if (this.outputManager) {
+      await this.outputManager.recordMessage(assistantMessage);
+    }
     
     // Handle tool calls if any
     if (response.tool_calls && response.tool_calls.length > 0) {
@@ -153,6 +217,11 @@ export class Agent extends EventEmitter implements TypedEventEmitter {
         this,
         response.tool_calls.map(tc => tc.function.name)
       ));
+      
+      // Record tool calls in output
+      if (this.outputManager) {
+        await this.outputManager.recordToolCalls(response.tool_calls);
+      }
       
       await this.handleToolCalls(response.tool_calls);
     } else if (response.content.trim()) {
@@ -169,20 +238,34 @@ export class Agent extends EventEmitter implements TypedEventEmitter {
       try {
         const result = await this.executeToolCall(toolCall);
         
-        this.messages.push({
+        const toolMessage: LLMMessage = {
           role: 'tool',
           content: JSON.stringify(result),
           tool_call_id: toolCall.id
-        });
+        };
+        
+        this.messages.push(toolMessage);
+        
+        // Record tool result in output immediately
+        if (this.outputManager) {
+          await this.outputManager.recordMessage(toolMessage);
+        }
         
       } catch (error) {
-        this.messages.push({
+        const errorMessage: LLMMessage = {
           role: 'tool',
           content: JSON.stringify({
             error: error instanceof Error ? error.message : 'Unknown error'
           }),
           tool_call_id: toolCall.id
-        });
+        };
+        
+        this.messages.push(errorMessage);
+        
+        // Record tool error in output
+        if (this.outputManager) {
+          await this.outputManager.recordMessage(errorMessage);
+        }
       }
     }
   }
@@ -212,6 +295,9 @@ export class Agent extends EventEmitter implements TypedEventEmitter {
       throw new Error(`Maximum depth ${this.config.maxDepth} reached`);
     }
     
+    // Get parent output path for child
+    const parentPath = this.outputManager?.getOutputPath();
+    
     const childAgent = new Agent({
       name: params.name,
       task: params.task,
@@ -219,7 +305,8 @@ export class Agent extends EventEmitter implements TypedEventEmitter {
       tools: params.tools,
       config: this.config,
       parentId: this.id,
-      depth: this.depth + 1
+      depth: this.depth + 1,
+      parentPath: parentPath // Pass parent path for child output
     });
 
     // Forward child events to parent with 'child' prefix
@@ -229,6 +316,17 @@ export class Agent extends EventEmitter implements TypedEventEmitter {
     
     // Emit child creation event
     this.emit('childCreated', EventDataBuilder.createChildAgentEventData(this, childAgent));
+    
+    // Record child creation in output
+    if (this.outputManager) {
+      await this.outputManager.recordChildCreated({
+        parentId: this.id,
+        parentName: this.task.name,
+        childId: childAgent.agentId,
+        childName: params.name,
+        childTask: params.task
+      });
+    }
     
     const childResult = await childAgent.execute();
     

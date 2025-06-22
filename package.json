@@ -10,7 +10,14 @@
     "build:simple": "tsc",
     "dev": "tsc --watch",
     "test": "jest",
-    "clean": "rm -rf dist"
+    "clean": "rm -rf dist",
+    "example": "ts-node examples/simple.ts",
+    "example:complex": "ts-node examples/complex-example.ts",
+    "example:compiled": "npm run build && node dist/examples/simple.js",
+    "test:output": "ts-node examples/test-streaming-output.ts",
+    "test:monitoring": "ts-node examples/monitoring-quick-test.ts",
+    "view": "ts-node scripts/viewer.ts",
+    "cleanup": "ts-node scripts/cleanup.ts"
   },
   "keywords": [
     "ai",
