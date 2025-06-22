@@ -1,27 +1,32 @@
 import { Agent } from '../src';
 
-async function main() {
-  try {
-    // Simple test without actual API call
-    const agent = new Agent({
-      name: "test-agent",
-      task: "What is 2+2?",
-      config: {
-        apiKey: "test-key",
-        model: "gpt-4o-mini",
-        maxDepth: 2
-      }
-    });
+// Lire la clé API depuis la variable d'environnement
+const apiKey = process.env.OPENAI_KEY_API || '';
+if (!apiKey) {
+  throw new Error('OPENAI_KEY_API non définie dans les variables d\'environnement');
+}
 
-    console.log('Agent created successfully!');
-    console.log('Agent name:', (agent as any).task.name);
-    console.log('Agent task:', (agent as any).task.description);
-    
-  } catch (error) {
-    console.error('Error:', error);
+// Simple test without actual API call
+const agent = new Agent({
+  name: "test-agent",
+  task: "Think about the future of AI, and write a short essay about it.",
+  config: {
+    apiKey,
+    model: "gpt-4o-mini",
+    maxDepth: 2
   }
-}
+});
 
-if (require.main === module) {
-  main();
-}
+agent.on('agentCompleted', (result) => {
+  console.log('Agent completed successfully:', result);
+});
+
+agent.on('childCreated', (child) => {
+  console.log('Child agent created:', child);
+});
+
+agent.execute().then((result) => {
+  console.log('Execution result:', result);
+}).catch((error) => {
+  console.error('Execution error:', error);
+});

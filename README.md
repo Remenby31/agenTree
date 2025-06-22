@@ -153,6 +153,21 @@ agent.on('agentCompleted', (childAgent, result) => {
 await agent.execute();
 ```
 
+### List of Events
+
+| Event | Description | Data |
+|-------|-------------|------|
+| `agentCreated` | Agent created | `{ id, name, task, depth, parentId }` |
+| `agentStarted` | Agent started | `{ id, name, task, depth }` |
+| `agentCompleted` | Agent completed | `{ id, name, result, executionTime, success }` |
+| `agentError` | Error in agent | `{ id, name, error, stack }` |
+| `contextLoaded` | Context loaded | `{ id, name, context: { fileCount, urlCount, textCount } }` |
+| `llmCall` | LLM call | `{ id, name, messageCount, availableTools, model }` |
+| `toolCalls` | Tool usage | `{ id, name, toolCalls }` |
+| `childCreated` | Child agent created | `{ parentId, parentName, childId, childName, childTask }` |
+| `child*` | Child events | All events from child agents |
+
+
 ## 🔧 Creating Custom Tools
 
 Transform any TypeScript function into an agent tool using the `@tool()` decorator:

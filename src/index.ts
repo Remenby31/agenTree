@@ -12,9 +12,14 @@ export { ToolRegistry } from './tools/ToolRegistry';
 export { LLMClient } from './llm/LLMClient';
 export { OpenAIClient } from './llm/OpenAIClient';
 
+// Monitoring exports
+export { AgentMonitor } from './monitoring/AgentMonitoring';
+export { MonitoringPresets } from './monitoring/presets';
+
 // Builtin tools
 export { createAgent, CreateAgentParams } from './tools/builtins/createAgent';
 export { stopAgent, StopAgentParams } from './tools/builtins/stopAgent';
 
 // Type exports
 export * from './types/index';
+export * from './types/events';
