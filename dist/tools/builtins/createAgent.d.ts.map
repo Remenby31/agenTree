@@ -1,1 +1,0 @@
-{"version":3,"file":"createAgent.d.ts","sourceRoot":"","sources":["../../../src/tools/builtins/createAgent.ts"],"names":[],"mappings":"AAGA,MAAM,WAAW,iBAAiB;IAChC,IAAI,EAAE,MAAM,CAAC;IACb,IAAI,EAAE,MAAM,CAAC;IACb,OAAO,CAAC,EAAE,MAAM,EAAE,CAAC;IACnB,KAAK,CAAC,EAAE,MAAM,EAAE,CAAC;CAClB;AAED;;;;;;GAMG;AACH,wBAAsB,WAAW,CAAC,MAAM,EAAE,iBAAiB,GAAG,OAAO,CAAC,MAAM,CAAC,CAG5E"}

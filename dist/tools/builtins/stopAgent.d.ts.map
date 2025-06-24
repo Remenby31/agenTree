@@ -1,1 +1,0 @@
-{"version":3,"file":"stopAgent.d.ts","sourceRoot":"","sources":["../../../src/tools/builtins/stopAgent.ts"],"names":[],"mappings":"AAGA,MAAM,WAAW,eAAe;IAC9B,MAAM,EAAE,MAAM,CAAC;IACf,OAAO,CAAC,EAAE,OAAO,CAAC;CACnB;AAED;;;;GAIG;AACH,wBAAsB,SAAS,CAAC,MAAM,EAAE,eAAe,GAAG,OAAO,CAAC,MAAM,CAAC,CAGxE"}
