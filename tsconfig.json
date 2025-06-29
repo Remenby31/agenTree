@@ -19,6 +19,13 @@
       { "transform": "./dist/build/transformer.js" }
     ]
   },
+  "ts-node": {
+    "compilerOptions": {
+      "experimentalDecorators": true,
+      "emitDecoratorMetadata": true,
+      "module": "commonjs"
+    }
+  },
   "include": [
     "src/**/*"
   ],

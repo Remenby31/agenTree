@@ -89,3 +89,12 @@ export interface EventData {
   data?: any;
   timestamp: string;
 }
+
+import type { ToolReference } from './enhanced-tools';
+// Import du nouveau type
+export { ToolReference, ToolResolver } from './enhanced-tools';
+
+// Étendre AgentConfig pour supporter les deux formats
+export interface FlexibleAgentConfig extends Omit<AgentConfig, 'tools'> {
+  tools?: ToolReference[]; // ✅ Support strings ET fonctions
+}

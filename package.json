@@ -6,10 +6,11 @@
   "types": "dist/index.d.ts",
   "scripts": {
     "build": "npm run build:transformer && tsc",
-    "build:transformer": "tsc build/transformer.ts --outDir dist/build --module commonjs --target es2020",
+    "build:transformer": "tsc build/*.ts --outDir dist/build --module commonjs",
     "build:simple": "tsc",
     "dev": "tsc --watch",
     "test": "jest",
+    "test:transformer": "jest tests/transformer/",
     "clean": "rm -rf dist",
     "example": "ts-node examples/simple.ts",
     "example:complex": "ts-node examples/complex-example.ts",
@@ -29,9 +30,10 @@
   "author": "",
   "license": "MIT",
   "devDependencies": {
-    "@types/jest": "^29.0.0",
+    "@types/jest": "^29.5.14",
     "@types/node": "^20.0.0",
     "jest": "^29.0.0",
+    "ts-jest": "^29.4.0",
     "ts-node": "^10.0.0",
     "typescript": "^5.0.0"
   },
@@ -44,5 +46,12 @@
   },
   "files": [
     "dist"
-  ]
+  ],
+  "jest": {
+    "preset": "ts-jest",
+    "testEnvironment": "node",
+    "transform": {
+      "^.+\\.tsx?$": "ts-jest"
+    }
+  }
 }

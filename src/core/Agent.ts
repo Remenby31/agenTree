@@ -6,7 +6,10 @@ import {
   AgentTreeConfig, 
   LLMMessage, 
   ToolCall,
-  ToolMetadata 
+  ToolMetadata,
+  ToolReference,
+  ToolResolver,
+  FlexibleAgentConfig
 } from '../types';
 import { 
   AgentEvents, 
@@ -46,14 +49,14 @@ export class Agent extends EventEmitter implements TypedEventEmitter {
   // Streaming output manager
   private outputManager?: StreamingOutputManager;
 
-  constructor(agentConfig: AgentConfig) {
+  constructor(agentConfig: FlexibleAgentConfig) {
     super();
     this.id = uuidv4();
     this.config = Config.merge(agentConfig.config);
     Config.validate(this.config);
-    
+
     this.task = new Task(agentConfig.name, agentConfig.task, agentConfig.context);
-    this.tools = agentConfig.tools || [];
+    this.tools = agentConfig.tools ? ToolResolver.resolveTools(agentConfig.tools) : [];
     this.parentId = agentConfig.parentId;
     this.depth = agentConfig.depth || 0;
     
