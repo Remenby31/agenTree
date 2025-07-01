@@ -174,17 +174,60 @@ await agent.execute();
 
 ### List of Events
 
-| Event | Description | Data |
-|-------|-------------|------|
-| `agentCreated` | Agent created | `{ id, name, task, depth, parentId }` |
-| `agentStarted` | Agent started | `{ id, name, task, depth }` |
-| `agentCompleted` | Agent completed | `{ id, name, result, executionTime, success }` |
-| `agentError` | Error in agent | `{ id, name, error, stack }` |
-| `contextLoaded` | Context loaded | `{ id, name, context: { fileCount, urlCount, textCount } }` |
-| `llmCall` | LLM call | `{ id, name, messageCount, availableTools, model }` |
-| `toolCalls` | Tool usage | `{ id, name, toolCalls }` |
-| `childCreated` | Child agent created | `{ parentId, parentName, childId, childName, childTask }` |
-| `child*` | Child events | All events from child agents |
+#### 🤖 Agent Lifecycle Events
+
+| Event | Description | Data Properties |
+|-------|-------------|-----------------|
+| `agentCreated` | Agent instance created | `{ id, name, task, depth, parentId?, timestamp }` |
+| `agentStarted` | Agent execution started | `{ id, name, task, depth, parentId?, timestamp }` |
+| `agentCompleted` | Agent execution completed | `{ id, name, result, executionTime, success, depth, parentId?, timestamp }` |
+| `agentError` | Error occurred in agent | `{ id, name, error, stack?, depth, parentId?, timestamp }` |
+
+#### 📋 Execution Events
+
+| Event | Description | Data Properties |
+|-------|-------------|-----------------|
+| `contextLoaded` | Context files/URLs loaded | `{ id, name, context: { fileCount, urlCount, textCount }, depth, parentId? }` |
+| `llmCall` | LLM API call initiated | `{ id, name, messageCount, availableTools, model?, depth, parentId? }` |
+| `toolCalls` | Tool execution batch (legacy) | `{ id, name, toolCalls: string[], toolDetails?, depth, parentId? }` |
+| `toolCallStarted` | Individual tool execution started | `{ id, name, toolName, toolInput, toolCallId, depth, parentId? }` |
+| `toolCallCompleted` | Individual tool execution finished | `{ id, name, toolName, toolOutput?, toolError?, duration, toolCallId, depth, parentId? }` |
+| `streamChunk` | Streaming response chunk received | `{ id, name, chunk, accumulatedContent, depth, parentId? }` |
+
+#### 👥 Hierarchy Events
+
+| Event | Description | Data Properties |
+|-------|-------------|-----------------|
+| `childCreated` | Child agent created | `{ parentId, parentName, childId, childName, childTask, depth }` |
+
+#### 📊 Event Data Properties
+
+**Common Properties** (present in all events):
+- `id`: Unique agent identifier
+- `name`: Agent name
+- `timestamp`: ISO timestamp when event occurred
+- `depth`: Agent depth in hierarchy
+- `parentId?`: Parent agent ID (if child agent)
+
+**Execution Properties**:
+- `executionTime`: Duration in milliseconds
+- `success`: Boolean indicating success/failure
+- `messageCount`: Number of messages in conversation
+- `availableTools`: Array of tool names available to agent
+
+**Tool Properties**:
+- `toolName`: Name of the tool being executed
+- `toolInput`: Input parameters passed to tool
+- `toolOutput?`: Result returned by tool (if successful)
+- `toolError?`: Error message (if tool failed)
+- `toolCallId`: Unique identifier for the tool call
+- `duration`: Tool execution time in milliseconds
+
+**Streaming Properties**:
+- `chunk`: Individual streaming chunk data
+- `accumulatedContent`: All content received so far
+- `done`: Boolean indicating if stream is complete
+
 
 ## 🔧 Creating Custom Tools
 

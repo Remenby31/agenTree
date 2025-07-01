@@ -15,9 +15,6 @@
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
     "resolveJsonModule": true,
-    "plugins": [
-      { "transform": "./dist/build/transformer.js" }
-    ]
   },
   "include": [
     "src/**/*"

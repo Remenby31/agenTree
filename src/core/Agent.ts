@@ -513,28 +513,10 @@ export class Agent extends EventEmitter implements TypedEventEmitter {
   }
 
   private forwardChildEvents(childAgent: Agent): void {
-    // Forward lifecycle events
-    childAgent.on('agentStarted', (data) => this.emit('childStarted', data));
-    childAgent.on('agentCompleted', (data) => this.emit('childCompleted', data));
-    childAgent.on('agentError', (data) => this.emit('childError', data));
-    
-    // Forward execution events
-    childAgent.on('llmCall', (data) => this.emit('childLlmCall', data));
-    childAgent.on('toolCalls', (data) => this.emit('childToolCalls', data));
-    childAgent.on('toolCallStarted', (data) => this.emit('childToolCallStarted', data));
-    childAgent.on('toolCallCompleted', (data) => this.emit('childToolCallCompleted', data));
-    childAgent.on('streamChunk', (data) => this.emit('childStreamChunk', data));
-    
-    // Forward nested child events (recursive)
+    // Forward only the unique child creation event - all other events
+    // are automatically emitted by child agents with parentId/depth properties
+    // for client-side filtering if needed
     childAgent.on('childCreated', (data) => this.emit('childCreated', data));
-    childAgent.on('childStarted', (data) => this.emit('childStarted', data));
-    childAgent.on('childCompleted', (data) => this.emit('childCompleted', data));
-    childAgent.on('childError', (data) => this.emit('childError', data));
-    childAgent.on('childLlmCall', (data) => this.emit('childLlmCall', data));
-    childAgent.on('childToolCalls', (data) => this.emit('childToolCalls', data));
-    childAgent.on('childToolCallStarted', (data) => this.emit('childToolCallStarted', data));
-    childAgent.on('childToolCallCompleted', (data) => this.emit('childToolCallCompleted', data));
-    childAgent.on('childStreamChunk', (data) => this.emit('childStreamChunk', data));
   }
 
   private async handleStopAgent(params: StopAgentParams): Promise<string> {

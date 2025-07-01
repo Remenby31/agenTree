@@ -1,12 +1,10 @@
 {
   "name": "agentree",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "A JavaScript/TypeScript library for creating hierarchical AI agents",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "build": "npm run build:transformer && tsc",
-    "build:transformer": "tsc build/transformer.ts --outDir dist/build --module commonjs --target es2020",
     "build:simple": "tsc",
     "dev": "tsc --watch",
     "test": "jest",

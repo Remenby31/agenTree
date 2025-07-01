@@ -95,14 +95,6 @@ export interface AgentEvents {
 
   // Événements d'agents enfants
   'childCreated': (data: ChildAgentEventData) => void;
-  'childStarted': (data: AgentEventData) => void;
-  'childCompleted': (data: AgentResultEventData) => void;
-  'childError': (data: AgentErrorEventData) => void;
-  'childLlmCall': (data: LLMCallEventData) => void;
-  'childToolCalls': (data: ToolCallEventData) => void;
-  'childToolCallStarted': (data: ToolCallStartedEventData) => void;
-  'childToolCallCompleted': (data: ToolCallCompletedEventData) => void;
-  'childStreamChunk': (data: StreamChunkEventData) => void;
 }
 
 // Helper pour créer les données d'événement

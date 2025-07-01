@@ -5,6 +5,89 @@ import { AgentMonitor } from './AgentMonitoring';
  * Listeners prêts à l'emploi pour différents cas d'usage
  */
 export class MonitoringPresets {
+
+  /**
+   * Helper pour écouter seulement les événements des agents parents (depth = 0)
+   */
+  static parentOnly(agent: Agent, eventName: string, callback: (data: any) => void): void {
+    agent.on(eventName as any, (data: any) => {
+      if (data.depth === 0) {
+        callback(data);
+      }
+    });
+  }
+
+  /**
+   * Helper pour écouter seulement les événements des agents enfants (depth > 0)
+   */
+  static childrenOnly(agent: Agent, eventName: string, callback: (data: any) => void): void {
+    agent.on(eventName as any, (data: any) => {
+      if (data.depth > 0) {
+        callback(data);
+      }
+    });
+  }
+
+  /**
+   * Helper pour monitoring hiérarchique avec indentation basée sur la profondeur
+   */
+  static hierarchical(agent: Agent): void {
+    const events = ['agentCreated', 'agentStarted', 'agentCompleted', 'agentError', 'llmCall', 'toolCalls'];
+    
+    events.forEach(eventName => {
+      agent.on(eventName as any, (data: any) => {
+        const indent = '  '.repeat(data.depth);
+        const emoji = this.getEventEmoji(eventName);
+        
+        let message = `${indent}${emoji} ${data.name}`;
+        
+        if (eventName === 'toolCalls') {
+          message += `: ${data.toolCalls.join(', ')}`;
+        } else if (eventName === 'agentCompleted') {
+          message += ` (${data.executionTime}ms)`;
+        } else if (eventName === 'agentError') {
+          message += ` - ${data.error}`;
+        }
+        
+        console.log(message);
+      });
+    });
+  }
+
+  /**
+   * Helper pour filtrer par profondeur spécifique
+   */
+  static byDepth(agent: Agent, depth: number, eventName: string, callback: (data: any) => void): void {
+    agent.on(eventName as any, (data: any) => {
+      if (data.depth === depth) {
+        callback(data);
+      }
+    });
+  }
+
+  /**
+   * Helper pour filtrer par ID parent spécifique
+   */
+  static byParent(agent: Agent, parentId: string, eventName: string, callback: (data: any) => void): void {
+    agent.on(eventName as any, (data: any) => {
+      if (data.parentId === parentId) {
+        callback(data);
+      }
+    });
+  }
+
+  private static getEventEmoji(eventName: string): string {
+    const emojis: { [key: string]: string } = {
+      'agentCreated': '🤖',
+      'agentStarted': '🚀',
+      'agentCompleted': '✅',
+      'agentError': '❌',
+      'llmCall': '🧠',
+      'toolCalls': '🔧',
+      'childCreated': '👶'
+    };
+    return emojis[eventName] || '📋';
+  }
   
   /**
    * Monitoring simple pour debug
@@ -79,23 +162,11 @@ export class MonitoringPresets {
       metrics.totalLLMCalls++;
     });
 
-    agent.on('childLlmCall', () => {
-      metrics.totalLLMCalls++;
-    });
-
     agent.on('toolCalls', () => {
       metrics.totalToolCalls++;
     });
 
-    agent.on('childToolCalls', () => {
-      metrics.totalToolCalls++;
-    });
-
     agent.on('agentError', () => {
-      metrics.totalErrors++;
-    });
-
-    agent.on('childError', () => {
       metrics.totalErrors++;
     });
 

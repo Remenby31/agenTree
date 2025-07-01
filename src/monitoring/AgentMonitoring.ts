@@ -49,13 +49,8 @@ export class AgentMonitor {
     agent.on('llmCall', this.handleLLMCall.bind(this));
     agent.on('toolCalls', this.handleToolCalls.bind(this));
 
-    // Child events
+    // Child events (only unique childCreated event, others are filtered by depth/parentId)
     agent.on('childCreated', this.handleChildCreated.bind(this));
-    agent.on('childStarted', this.handleChildStarted.bind(this));
-    agent.on('childCompleted', this.handleChildCompleted.bind(this));
-    agent.on('childError', this.handleChildError.bind(this));
-    agent.on('childLlmCall', this.handleChildLLMCall.bind(this));
-    agent.on('childToolCalls', this.handleChildToolCalls.bind(this));
   }
 
   private handleAgentCreated(data: AgentEventData): void {
@@ -72,12 +67,21 @@ export class AgentMonitor {
   }
 
   private handleAgentStarted(data: AgentEventData): void {
-    this.log('info', `▶️  Démarrage: ${data.name}`, data);
+    if (data.depth === 0) {
+      this.log('info', `▶️  Démarrage: ${data.name}`, data);
+    } else if (this.options.logLevel === 'detailed' || this.options.logLevel === 'verbose') {
+      this.log('info', `▶️  Enfant démarré: ${data.name}`, data);
+    }
   }
 
   private handleAgentCompleted(data: AgentResultEventData): void {
     const duration = Date.now() - this.startTime;
-    this.log('success', `✅ Terminé: ${data.name} (${data.executionTime}ms)`, data);
+    
+    if (data.depth === 0) {
+      this.log('success', `✅ Terminé: ${data.name} (${data.executionTime}ms)`, data);
+    } else {
+      this.log('success', `✅ Enfant terminé: ${data.name}`, data);
+    }
     
     if (this.options.logLevel === 'detailed' || this.options.logLevel === 'verbose') {
       const preview = data.result.result?.substring(0, 100) || 'Pas de résultat';
@@ -86,7 +90,11 @@ export class AgentMonitor {
   }
 
   private handleAgentError(data: AgentErrorEventData): void {
-    this.log('error', `❌ Erreur: ${data.name} - ${data.error}`, data);
+    if (data.depth === 0) {
+      this.log('error', `❌ Erreur: ${data.name} - ${data.error}`, data);
+    } else {
+      this.log('error', `❌ Erreur enfant: ${data.name} - ${data.error}`, data);
+    }
   }
 
   private handleContextLoaded(data: ContextLoadEventData): void {
@@ -100,7 +108,8 @@ export class AgentMonitor {
 
   private handleLLMCall(data: LLMCallEventData): void {
     if (this.options.logLevel === 'detailed' || this.options.logLevel === 'verbose') {
-      this.log('info', `🧠 LLM: ${data.messageCount} messages, ${data.availableTools.length} outils`, data);
+      const prefix = data.depth > 0 ? 'Enfant ' : '';
+      this.log('info', `🧠 ${prefix}LLM: ${data.messageCount} messages, ${data.availableTools.length} outils`, data);
       
       if (this.options.logLevel === 'verbose' && data.availableTools.length > 0) {
         this.log('debug', `   Outils: ${data.availableTools.join(', ')}`, data);
@@ -110,7 +119,8 @@ export class AgentMonitor {
 
   private handleToolCalls(data: ToolCallEventData): void {
     if (this.options.logLevel === 'basic' || this.options.logLevel === 'detailed' || this.options.logLevel === 'verbose') {
-      this.log('info', `🔧 Outils: ${data.toolCalls.join(', ')}`, data);
+      const prefix = data.depth > 0 ? 'Enfant ' : '';
+      this.log('info', `🔧 ${prefix}Outils: ${data.toolCalls.join(', ')}`, data);
     }
   }
 
@@ -125,32 +135,6 @@ export class AgentMonitor {
     
     if (this.options.logLevel === 'detailed' || this.options.logLevel === 'verbose') {
       this.log('debug', `   Tâche: ${data.childTask}`, data);
-    }
-  }
-
-  private handleChildStarted(data: AgentEventData): void {
-    if (this.options.logLevel === 'detailed' || this.options.logLevel === 'verbose') {
-      this.log('info', `▶️  Enfant démarré: ${data.name}`, data);
-    }
-  }
-
-  private handleChildCompleted(data: AgentResultEventData): void {
-    this.log('success', `✅ Enfant terminé: ${data.name}`, data);
-  }
-
-  private handleChildError(data: AgentErrorEventData): void {
-    this.log('error', `❌ Erreur enfant: ${data.name} - ${data.error}`, data);
-  }
-
-  private handleChildLLMCall(data: LLMCallEventData): void {
-    if (this.options.logLevel === 'verbose') {
-      this.log('debug', `🧠 Enfant LLM: ${data.name}`, data);
-    }
-  }
-
-  private handleChildToolCalls(data: ToolCallEventData): void {
-    if (this.options.logLevel === 'detailed' || this.options.logLevel === 'verbose') {
-      this.log('info', `🔧 Enfant outils: ${data.toolCalls.join(', ')}`, data);
     }
   }
 
