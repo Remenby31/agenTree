@@ -13,7 +13,7 @@ AgenTree is a TypeScript library that enables AI agents to recursively break dow
 - **🧠 Intelligent Task Decomposition** - Agents automatically break down complex tasks into manageable subtasks
 - **🎯 Dynamic Role Assignment** - Parent agents define specialized roles and tools for their children
 - **📁 Automatic Documentation** - Complete execution traces saved as structured markdown reports  
-- **🔧 Easy Tool Creation** - Transform any TypeScript function into an agent tool with a simple decorator
+- **🔧 Easy Tool Creation** - Transform any function into an agent tool with Zod schema validation
 - **🔌 MCP Integration** - Native support for Model Context Protocol servers
 - **📊 Real-time Monitoring** - Track agent creation and task progress with event callbacks
 
@@ -21,25 +21,32 @@ AgenTree is a TypeScript library that enables AI agents to recursively break dow
 
 ```typescript
 import { Agent, tool } from 'agentree';
+import { z } from 'zod';
 
-/**
- * Search the web for information
- * @param query The search query
- * @param maxResults Maximum number of results to return
- */
-@tool()
-async function webSearch(query: string, maxResults: number = 5) {
-  // Your implementation
-}
+// Define tools using the tool() helper with Zod schemas
+const webSearchTool = tool({
+  name: 'web_search',
+  description: 'Search the web for information',
+  parameters: z.object({
+    query: z.string().describe('The search query'),
+    maxResults: z.number().default(5).describe('Maximum number of results to return')
+  }),
+  async execute({ query, maxResults }) {
+    // Your implementation
+    return `Search results for: ${query}`;
+  }
+});
 
-/**
- * Read content from a file
- * @param filePath Path to the file to read
- */
-@tool()
-async function readFile(filePath: string): Promise<string> {
-  return fs.readFileSync(filePath, 'utf8');
-}
+const readFileTool = tool({
+  name: 'read_file',
+  description: 'Read content from a file',
+  parameters: z.object({
+    filePath: z.string().describe('Path to the file to read')
+  }),
+  async execute({ filePath }) {
+    return fs.readFileSync(filePath, 'utf8');
+  }
+});
 
 // Create and execute an agent
 const agent = new Agent({
@@ -49,7 +56,7 @@ const agent = new Agent({
     "./company-info.md",
     "https://industry-report.com/2025-trends"
   ],
-  tools: [webSearch, readFile],
+  tools: [webSearchTool, readFileTool],
   config: {
     model: "claude-3-sonnet",
     maxDepth: 3,
@@ -90,18 +97,30 @@ Unlike traditional AI frameworks where you predefine agent roles, **AgenTree age
 ### Basic Usage
 
 ```typescript
-const agent = new Agent({
+const contentCreator = new Agent({
   name: "content-creator",
   task: "Write a blog post about sustainable technology",
-  tools: [webSearch, readFile]
+  tools: [webSearchTool, readFileTool]
 });
 
-await agent.execute();
+await contentCreator.execute();
 ```
 
 ### With Custom Context
 
 ```typescript
+const readCSVTool = tool({
+  name: 'read_csv',
+  description: 'Read and parse CSV data',
+  parameters: z.object({
+    filePath: z.string().describe('Path to the CSV file')
+  }),
+  async execute({ filePath }) {
+    // CSV parsing implementation
+    return parsedData;
+  }
+});
+
 const agent = new Agent({
   name: "sales-analyzer", 
   task: "Analyze Q1 sales performance and identify improvement opportunities",
@@ -110,7 +129,7 @@ const agent = new Agent({
     "./docs/sales-methodology.md",   // Documentation context  
     "Our target market is SMB SaaS companies" // Text context
   ],
-  tools: [readCSV, calculateMetrics, generateChart]
+  tools: [readCSVTool, calculateMetrics, generateChart]
 });
 ```
 
@@ -120,10 +139,10 @@ const agent = new Agent({
 const agent = new Agent({
   name: "strategic-planner",
   task: "Develop a 2025 product roadmap",
-  tools: [webSearch, readFile, dataAnalysis],
+  tools: [webSearchTool, readFileTool, dataAnalysis],
   config: {
     baseUrl: "https://api.anthropic.com",
-    model: "claude-3-opus", 
+    model: "claude-4-sonnet", 
     apiKey: process.env.ANTHROPIC_API_KEY,
     maxDepth: 4,
     outputFile: true,
@@ -138,7 +157,7 @@ const agent = new Agent({
 const agent = new Agent({
   name: "researcher",
   task: "Research market trends",
-  tools: [webSearch]
+  tools: [webSearchTool]
 });
 
 // Monitor agent tree creation
@@ -167,58 +186,84 @@ await agent.execute();
 | `childCreated` | Child agent created | `{ parentId, parentName, childId, childName, childTask }` |
 | `child*` | Child events | All events from child agents |
 
-
 ## 🔧 Creating Custom Tools
 
-Transform any TypeScript function into an agent tool using the `@tool()` decorator:
+Transform any function into an agent tool using the `tool()` helper with Zod schema validation:
 
 ```typescript
-/**
- * Analyze CSV data and generate insights
- * @param filePath Path to the CSV file
- * @param groupBy Column to group data by
- * @param metric Metric to calculate (sum, avg, count)
- */
-@tool()
-async function analyzeCSV(
-  filePath: string, 
-  groupBy: string, 
-  metric: 'sum' | 'avg' | 'count' = 'count'
-): Promise<AnalysisResult> {
-  // Your implementation
-  const data = await readCSV(filePath);
-  return performAnalysis(data, groupBy, metric);
-}
+import { tool } from 'agentree';
+import { z } from 'zod';
 
-/**
- * Send data to an external API
- * @param endpoint API endpoint URL
- * @param data Data to send
- */
-@tool()
-async function apiCall(endpoint: string, data: any): Promise<any> {
-  return fetch(endpoint, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data)
-  }).then(r => r.json());
-}
+// Analyze CSV data tool
+const analyzeCSVTool = tool({
+  name: 'analyze_csv',
+  description: 'Analyze CSV data and generate insights',
+  parameters: z.object({
+    filePath: z.string().describe('Path to the CSV file'),
+    groupBy: z.string().describe('Column to group data by'),
+    metric: z.enum(['sum', 'avg', 'count']).default('count').describe('Metric to calculate')
+  }),
+  async execute({ filePath, groupBy, metric }) {
+    const data = await readCSV(filePath);
+    return performAnalysis(data, groupBy, metric);
+  }
+});
+
+// API call tool
+const apiCallTool = tool({
+  name: 'api_call',
+  description: 'Send data to an external API',
+  parameters: z.object({
+    endpoint: z.string().url().describe('API endpoint URL'),
+    data: z.any().describe('Data to send')
+  }),
+  async execute({ endpoint, data }) {
+    return fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    }).then(r => r.json());
+  }
+});
+
+// Database query tool with custom error handling
+const dbQueryTool = tool({
+  name: 'db_query',
+  description: 'Execute a database query',
+  parameters: z.object({
+    query: z.string().describe('SQL query to execute'),
+    params: z.array(z.any()).optional().describe('Query parameters')
+  }),
+  async execute({ query, params = [] }) {
+    return await database.query(query, params);
+  },
+  errorFunction: (context, error) => {
+    return `Database error: ${error.message}. Please check your query syntax.`;
+  }
+});
 ```
 
-The `@tool()` decorator automatically:
-- ✅ Extracts function descriptions from JSDoc comments
-- ✅ Infers parameter types from TypeScript
-- ✅ Generates tool calling schemas
-- ✅ Handles validation and error handling
+### Tool Options Reference
+
+| Field | Required | Description |
+|-------|----------|-------------|
+| `name` | No | Defaults to the function name (e.g., `get_weather`) |
+| `description` | Yes | Clear, human-readable description shown to the LLM |
+| `parameters` | Yes | Zod schema object defining the tool parameters |
+| `strict` | No | When `true` (default), returns error if arguments don't validate |
+| `execute` | Yes | `(args, context) => string \| Promise<string>` – your business logic |
+| `errorFunction` | No | Custom handler `(context, error) => string` for error transformation |
 
 ## 🔌 MCP Integration
 
 AgenTree supports Model Context Protocol servers out of the box:
 
+### Remote MCP Servers
+
 ```typescript
 import { MCPServer } from 'agentree';
 
-// Connect to an MCP server
+// Connect to remote MCP servers
 const dbServer = new MCPServer("sqlite://./company.db");
 const webServer = new MCPServer("web-scraper://config.json");
 
@@ -230,6 +275,24 @@ const agent = new Agent({
     ...webServer.tools,   // Web scraping tools
     customAnalysis        // Your custom tools
   ]
+});
+```
+
+### Local MCP Servers
+
+```typescript
+import { Agent, MCPServerStdio } from 'agentree';
+
+// Spawn and connect to local MCP server
+const server = new MCPServerStdio({
+  fullCommand: 'npx -y @modelcontextprotocol/server-filesystem ./sample_files',
+});
+await server.connect();
+
+const agent = new Agent({
+  name: 'file-assistant',
+  mcpServers: [server],
+  task: 'Analyze the files in our project directory'
 });
 ```
 
@@ -263,20 +326,7 @@ Each report contains:
 ## ⚙️ Installation
 
 ```bash
-npm install agentree
-```
-
-### TypeScript Configuration
-
-Add to your `tsconfig.json`:
-
-```json
-{
-  "compilerOptions": {
-    "experimentalDecorators": true,
-    "emitDecoratorMetadata": true
-  }
-}
+npm install agentree zod
 ```
 
 ### Environment Setup
@@ -307,7 +357,8 @@ interface AgentOptions {
   name: string;              // Agent identifier
   task: string;              // Task description  
   context?: string[];        // Context (files, URLs, text)
-  tools?: Function[];        // Available tools
+  tools?: Tool[];            // Available tools
+  mcpServers?: MCPServer[];  // MCP servers
   config?: AgentTreeConfig;  // Configuration
 }
 ```
@@ -325,16 +376,20 @@ interface AgentTreeConfig {
 }
 ```
 
-### Tool Decorator
+### Tool Helper
 
 ```typescript
-@tool(options?: ToolOptions)
-function yourFunction(params): Promise<any>
+import { tool } from 'agentree';
+import { z } from 'zod';
 
-interface ToolOptions {
-  name?: string;           // Custom tool name
-  description?: string;    // Override JSDoc description
-}
+const myTool = tool({
+  name?: string;                              // Tool name
+  description: string;                        // Tool description
+  parameters: z.ZodSchema;                    // Zod parameter schema
+  strict?: boolean;                           // Strict validation (default: true)
+  execute: (args, context?) => Promise<any>; // Tool execution
+  errorFunction?: (context, error) => string; // Custom error handler
+});
 ```
 
 ## 🗺️ Roadmap

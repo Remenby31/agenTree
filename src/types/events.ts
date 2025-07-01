@@ -24,9 +24,41 @@ export interface LLMCallEventData extends AgentEventData {
   model?: string;
 }
 
+export interface ToolCallDetail {
+  name: string;
+  input: any;
+  output?: string;
+  duration?: number;
+  error?: string;
+}
+
 export interface ToolCallEventData extends AgentEventData {
   toolCalls: string[];
-  toolResults?: Record<string, any>;
+  toolDetails?: ToolCallDetail[];
+}
+
+export interface ToolCallStartedEventData extends AgentEventData {
+  toolName: string;
+  toolInput: any;
+  toolCallId: string;
+}
+
+export interface ToolCallCompletedEventData extends AgentEventData {
+  toolName: string;
+  toolInput: any;
+  toolOutput?: string;
+  toolError?: string;
+  duration: number;
+  toolCallId: string;
+}
+
+export interface StreamChunkEventData extends AgentEventData {
+  chunk: {
+    content?: string;
+    tool_calls?: any[];
+    done: boolean;
+  };
+  accumulatedContent: string;
 }
 
 export interface ContextLoadEventData extends AgentEventData {
@@ -57,6 +89,9 @@ export interface AgentEvents {
   'contextLoaded': (data: ContextLoadEventData) => void;
   'llmCall': (data: LLMCallEventData) => void;
   'toolCalls': (data: ToolCallEventData) => void;
+  'toolCallStarted': (data: ToolCallStartedEventData) => void;
+  'toolCallCompleted': (data: ToolCallCompletedEventData) => void;
+  'streamChunk': (data: StreamChunkEventData) => void;
 
   // Événements d'agents enfants
   'childCreated': (data: ChildAgentEventData) => void;
@@ -65,6 +100,9 @@ export interface AgentEvents {
   'childError': (data: AgentErrorEventData) => void;
   'childLlmCall': (data: LLMCallEventData) => void;
   'childToolCalls': (data: ToolCallEventData) => void;
+  'childToolCallStarted': (data: ToolCallStartedEventData) => void;
+  'childToolCallCompleted': (data: ToolCallCompletedEventData) => void;
+  'childStreamChunk': (data: StreamChunkEventData) => void;
 }
 
 // Helper pour créer les données d'événement
@@ -106,10 +144,11 @@ export class EventDataBuilder {
     };
   }
 
-  static createToolCallEventData(agent: any, toolCalls: string[]): ToolCallEventData {
+  static createToolCallEventData(agent: any, toolCalls: string[], toolDetails?: ToolCallDetail[]): ToolCallEventData {
     return {
       ...this.createBaseEventData(agent),
-      toolCalls
+      toolCalls,
+      toolDetails
     };
   }
 
@@ -132,6 +171,35 @@ export class EventDataBuilder {
       childId: child.agentId,
       childName: child.agentName,
       childTask: child.task.description
+    };
+  }
+
+  static createToolCallStartedEventData(agent: any, toolName: string, toolInput: any, toolCallId: string): ToolCallStartedEventData {
+    return {
+      ...this.createBaseEventData(agent),
+      toolName,
+      toolInput,
+      toolCallId
+    };
+  }
+
+  static createToolCallCompletedEventData(agent: any, toolName: string, toolInput: any, toolOutput: string | undefined, toolError: string | undefined, duration: number, toolCallId: string): ToolCallCompletedEventData {
+    return {
+      ...this.createBaseEventData(agent),
+      toolName,
+      toolInput,
+      toolOutput,
+      toolError,
+      duration,
+      toolCallId
+    };
+  }
+
+  static createStreamChunkEventData(agent: any, chunk: any, accumulatedContent: string): StreamChunkEventData {
+    return {
+      ...this.createBaseEventData(agent),
+      chunk,
+      accumulatedContent
     };
   }
 }

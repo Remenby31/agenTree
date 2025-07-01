@@ -1,4 +1,3 @@
-import { registerTool } from '../ToolDecorator';
 import { ToolMetadata } from '../../types';
 
 export interface StopAgentParams {
@@ -6,17 +5,7 @@ export interface StopAgentParams {
   success?: boolean;
 }
 
-/**
- * Stop the current agent execution and return the final result
- * @param result The final result to return to the parent agent
- * @param success Whether the task was completed successfully (default: true)
- */
-export async function stopAgent(params: StopAgentParams): Promise<string> {
-  // This is a placeholder - the actual implementation will be injected by the Agent class
-  throw new Error('stopAgent tool must be executed within an Agent context');
-}
-
-const metadata: ToolMetadata = {
+export const stopAgentMetadata: ToolMetadata = {
   name: 'stopAgent',
   description: 'Stop the current agent execution and return the final result',
   parameters: {
@@ -35,5 +24,3 @@ const metadata: ToolMetadata = {
     required: ['result']
   }
 };
-
-registerTool('stopAgent', stopAgent, metadata);

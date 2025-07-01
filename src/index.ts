@@ -5,7 +5,7 @@ export { Task } from './core/Task';
 export { Context } from './core/Context';
 
 // Tool system exports
-export { tool, registerTool } from './tools/ToolDecorator';
+export { tool } from './tools/ToolHelper';
 export { ToolRegistry } from './tools/ToolRegistry';
 
 // LLM client exports
@@ -20,9 +20,9 @@ export { MarkdownWriter, JSONWriter, PathManager } from './output/FileWriters';
 export { AgentMonitor } from './monitoring/AgentMonitoring';
 export { MonitoringPresets } from './monitoring/presets';
 
-// Builtin tools
-export { createAgent, CreateAgentParams } from './tools/builtins/createAgent';
-export { stopAgent, StopAgentParams } from './tools/builtins/stopAgent';
+// Builtin tool types
+export { CreateAgentParams } from './tools/builtins/createAgent';
+export { StopAgentParams } from './tools/builtins/stopAgent';
 
 // Type exports
 export * from './types/index';

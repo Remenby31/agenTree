@@ -12,7 +12,7 @@ export interface AgentConfig {
   name: string;
   task: string;
   context?: string[];
-  tools?: string[];
+  tools?: Tool[] | string[];
   config?: AgentTreeConfig;
   parentId?: string;
   depth?: number;
@@ -42,6 +42,18 @@ export interface ToolMetadata {
 export interface ToolFunction {
   (...args: any[]): Promise<any> | any;
   __toolMetadata?: ToolMetadata;
+}
+
+export interface Tool {
+  name: string;
+  description: string;
+  parameters: {
+    type: 'object';
+    properties: Record<string, any>;
+    required?: string[];
+  };
+  execute: (args: any, context?: any) => Promise<string> | string;
+  errorFunction?: (context: any, error: Error) => string;
 }
 
 export interface LLMMessage {

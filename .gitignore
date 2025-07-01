@@ -13,3 +13,6 @@ dist/
 
 # Agent files
 .agentree
+
+# Claude code
+.claude

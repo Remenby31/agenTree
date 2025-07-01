@@ -1,26 +1,14 @@
-import { ToolFunction, ToolMetadata } from '../types';
+import { Tool } from '../types';
 
 export class ToolRegistry {
-  private static tools: Map<string, ToolFunction> = new Map();
+  private static tools: Map<string, Tool> = new Map();
 
-  public static register(name: string, func: ToolFunction): void {
-    this.tools.set(name, func);
+  public static register(tool: Tool): void {
+    this.tools.set(tool.name, tool);
   }
 
-  public static get(name: string): ToolFunction | undefined {
+  public static get(name: string): Tool | undefined {
     return this.tools.get(name);
-  }
-
-  public static getMetadata(name: string): ToolMetadata | undefined {
-    const tool = this.tools.get(name);
-    return tool?.__toolMetadata;
-  }
-
-  public static getAllMetadata(toolNames?: string[]): ToolMetadata[] {
-    const names = toolNames || Array.from(this.tools.keys());
-    return names
-      .map(name => this.getMetadata(name))
-      .filter((metadata): metadata is ToolMetadata => !!metadata);
   }
 
   public static list(): string[] {
@@ -33,5 +21,9 @@ export class ToolRegistry {
 
   public static has(name: string): boolean {
     return this.tools.has(name);
+  }
+
+  public static getAll(): Tool[] {
+    return Array.from(this.tools.values());
   }
 }

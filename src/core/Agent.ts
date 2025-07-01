@@ -6,19 +6,24 @@ import {
   AgentTreeConfig, 
   LLMMessage, 
   ToolCall,
-  ToolMetadata 
+  ToolMetadata,
+  Tool 
 } from '../types';
 import { 
   AgentEvents, 
-  EventDataBuilder 
+  EventDataBuilder,
+  ToolCallDetail,
+  ToolCallStartedEventData,
+  ToolCallCompletedEventData,
+  StreamChunkEventData
 } from '../types/events';
 import { Config } from './Config';
 import { Task } from './Task';
 import { LLMClient } from '../llm/LLMClient';
 import { OpenAIClient } from '../llm/OpenAIClient';
 import { ToolRegistry } from '../tools/ToolRegistry';
-import { CreateAgentParams } from '../tools/builtins/createAgent';
-import { StopAgentParams } from '../tools/builtins/stopAgent';
+import { CreateAgentParams, createAgentMetadata } from '../tools/builtins/createAgent';
+import { StopAgentParams, stopAgentMetadata } from '../tools/builtins/stopAgent';
 import { StreamingOutputManager } from '../output/StreamingOutputManager';
 
 // Interface typée pour EventEmitter
@@ -33,7 +38,8 @@ export class Agent extends EventEmitter implements TypedEventEmitter {
   private readonly id: string;
   private readonly config: AgentTreeConfig;
   private readonly task: Task;
-  private readonly tools: string[];
+  private readonly tools: Tool[];
+  private readonly toolNames: string[];
   private readonly llmClient: LLMClient;
   private readonly parentId?: string;
   private readonly depth: number;
@@ -53,15 +59,29 @@ export class Agent extends EventEmitter implements TypedEventEmitter {
     Config.validate(this.config);
     
     this.task = new Task(agentConfig.name, agentConfig.task, agentConfig.context);
-    this.tools = agentConfig.tools || [];
+    
+    // Handle both Tool[] and string[] for tools
+    const configTools = agentConfig.tools || [];
+    if (configTools.length > 0 && typeof configTools[0] === 'string') {
+      // Tools provided as string names - resolve from registry
+      this.toolNames = configTools as string[];
+      this.tools = this.toolNames
+        .map(name => ToolRegistry.get(name))
+        .filter((tool): tool is Tool => tool !== undefined);
+    } else {
+      // Tools provided as Tool objects
+      this.tools = configTools as Tool[];
+      this.toolNames = this.tools.map(tool => tool.name);
+      // Register tools in the registry for child agents
+      this.tools.forEach(tool => ToolRegistry.register(tool));
+    }
+    
     this.parentId = agentConfig.parentId;
     this.depth = agentConfig.depth || 0;
     
     // Initialize LLM client - for now only OpenAI
     this.llmClient = new OpenAIClient(this.config);
     
-    // Initialize builtin tools
-    this.initializeBuiltinTools();
 
     // Initialize streaming output manager
     if (this.config.outputFile) {
@@ -190,17 +210,22 @@ export class Agent extends EventEmitter implements TypedEventEmitter {
     }
     
     // Call LLM
-    const response = await this.llmClient.chat(
-      this.messages,
-      availableTools,
-      this.config.streaming
-    );
+    let response: any;
+    if (this.config.streaming) {
+      response = await this.handleStreamingLLMCall(availableTools);
+    } else {
+      response = await this.llmClient.chat(
+        this.messages,
+        availableTools,
+        false
+      );
+    }
     
     // Add assistant response to messages
     const assistantMessage: LLMMessage = {
       role: 'assistant',
       content: response.content,
-      tool_calls: response.tool_calls
+      ...(response.tool_calls && response.tool_calls.length > 0 ? { tool_calls: response.tool_calls } : {})
     };
     
     this.messages.push(assistantMessage);
@@ -212,31 +237,69 @@ export class Agent extends EventEmitter implements TypedEventEmitter {
     
     // Handle tool calls if any
     if (response.tool_calls && response.tool_calls.length > 0) {
-      // Emit tool calls event
-      this.emit('toolCalls', EventDataBuilder.createToolCallEventData(
-        this,
-        response.tool_calls.map(tc => tc.function.name)
-      ));
-      
       // Record tool calls in output
       if (this.outputManager) {
         await this.outputManager.recordToolCalls(response.tool_calls);
       }
       
       await this.handleToolCalls(response.tool_calls);
-    } else if (response.content.trim()) {
+    } else if (response.content && response.content.trim()) {
       // If no tool calls but has content, assume completion
       await this.handleStopAgent({
         result: response.content,
+        success: true
+      });
+    } else {
+      // No tool calls and no meaningful content - this shouldn't happen in normal flow
+      console.warn('⚠️  LLM response has no tool calls and no content. This may indicate a streaming issue.');
+      await this.handleStopAgent({
+        result: 'Task completed',
         success: true
       });
     }
   }
 
   private async handleToolCalls(toolCalls: ToolCall[]): Promise<void> {
+    const toolDetails: ToolCallDetail[] = [];
+    
     for (const toolCall of toolCalls) {
+      const toolInput = JSON.parse(toolCall.function.arguments);
+      
+      // Emit tool call started event
+      this.emit('toolCallStarted', EventDataBuilder.createToolCallStartedEventData(
+        this,
+        toolCall.function.name,
+        toolInput,
+        toolCall.id
+      ));
+      
+      const startTime = Date.now();
+      const toolDetail: ToolCallDetail = {
+        name: toolCall.function.name,
+        input: toolInput
+      };
+      
+      let toolOutput: string | undefined;
+      let toolError: string | undefined;
+      
       try {
         const result = await this.executeToolCall(toolCall);
+        const duration = Date.now() - startTime;
+        
+        toolOutput = typeof result === 'string' ? result : JSON.stringify(result);
+        toolDetail.output = toolOutput;
+        toolDetail.duration = duration;
+        
+        // Emit tool call completed event
+        this.emit('toolCallCompleted', EventDataBuilder.createToolCallCompletedEventData(
+          this,
+          toolCall.function.name,
+          toolInput,
+          toolOutput,
+          undefined,
+          duration,
+          toolCall.id
+        ));
         
         const toolMessage: LLMMessage = {
           role: 'tool',
@@ -252,10 +315,28 @@ export class Agent extends EventEmitter implements TypedEventEmitter {
         }
         
       } catch (error) {
+        const duration = Date.now() - startTime;
+        const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+        
+        toolError = errorMsg;
+        toolDetail.error = errorMsg;
+        toolDetail.duration = duration;
+        
+        // Emit tool call completed event with error
+        this.emit('toolCallCompleted', EventDataBuilder.createToolCallCompletedEventData(
+          this,
+          toolCall.function.name,
+          toolInput,
+          undefined,
+          errorMsg,
+          duration,
+          toolCall.id
+        ));
+        
         const errorMessage: LLMMessage = {
           role: 'tool',
           content: JSON.stringify({
-            error: error instanceof Error ? error.message : 'Unknown error'
+            error: errorMsg
           }),
           tool_call_id: toolCall.id
         };
@@ -267,7 +348,16 @@ export class Agent extends EventEmitter implements TypedEventEmitter {
           await this.outputManager.recordMessage(errorMessage);
         }
       }
+      
+      toolDetails.push(toolDetail);
     }
+    
+    // Emit detailed tool calls event (legacy)
+    this.emit('toolCalls', EventDataBuilder.createToolCallEventData(
+      this,
+      toolCalls.map(tc => tc.function.name),
+      toolDetails
+    ));
   }
 
   private async executeToolCall(toolCall: ToolCall): Promise<any> {
@@ -282,12 +372,12 @@ export class Agent extends EventEmitter implements TypedEventEmitter {
     }
     
     // Handle user tools
-    const tool = ToolRegistry.get(name);
+    const tool = this.tools.find(t => t.name === name);
     if (!tool) {
       throw new Error(`Tool ${name} not found`);
     }
     
-    return await tool(args);
+    return await tool.execute(args);
   }
 
   private async handleCreateAgent(params: CreateAgentParams): Promise<string> {
@@ -333,6 +423,95 @@ export class Agent extends EventEmitter implements TypedEventEmitter {
     return `Child agent "${params.name}" completed with result: ${childResult.result}`;
   }
 
+  private async handleStreamingLLMCall(availableTools: ToolMetadata[]): Promise<any> {
+    let accumulatedContent = '';
+    const toolCallsMap = new Map<string, any>();
+    const indexToIdMap = new Map<number, string>(); // Track index to ID mapping
+    let hasReceivedData = false;
+    let chunkCount = 0;
+    
+    for await (const chunk of this.llmClient.chatStream(this.messages, availableTools)) {
+      chunkCount++;
+      
+      if (chunk.content) {
+        accumulatedContent += chunk.content;
+        hasReceivedData = true;
+      }
+      
+      // Handle tool calls - they come fragmented in streaming
+      if (chunk.tool_calls && chunk.tool_calls.length > 0) {
+        hasReceivedData = true;
+        for (const partialToolCall of chunk.tool_calls) {
+          const index = (partialToolCall as any).index;
+          
+          // If we have an ID, map the index to the ID for future chunks
+          if (partialToolCall.id && index !== undefined) {
+            indexToIdMap.set(index, partialToolCall.id);
+          }
+          
+          // Use existing ID mapping if available, otherwise use the provided ID or fallback to index
+          const callKey = (index !== undefined && indexToIdMap.has(index)) 
+            ? indexToIdMap.get(index)! 
+            : (partialToolCall.id || `index_${index !== undefined ? index : 0}`);
+          
+          const existingCall = toolCallsMap.get(callKey) || {
+            id: callKey,
+            type: 'function',
+            function: { name: '', arguments: '' }
+          };
+          
+          // Accumulate function name and arguments
+          if (partialToolCall.function?.name) {
+            existingCall.function.name += partialToolCall.function.name;
+          }
+          if (partialToolCall.function?.arguments) {
+            existingCall.function.arguments += partialToolCall.function.arguments;
+          }
+          
+          toolCallsMap.set(callKey, existingCall);
+        }
+      }
+      
+      // Emit stream chunk event
+      this.emit('streamChunk', EventDataBuilder.createStreamChunkEventData(
+        this,
+        chunk,
+        accumulatedContent
+      ));
+      
+      if (chunk.done) {
+        break;
+      }
+      
+      // Safety check: prevent infinite loops
+      if (chunkCount > 1000) {
+        console.warn('⚠️  Streaming exceeded 1000 chunks, breaking to prevent infinite loop');
+        break;
+      }
+    }
+    
+    // Convert accumulated tool calls to final format
+    const finalToolCalls = Array.from(toolCallsMap.values())
+      .filter(tc => tc.id && tc.function?.name && tc.function?.arguments)
+      .map(tc => {
+        try {
+          // Validate that arguments are valid JSON
+          JSON.parse(tc.function.arguments);
+          return tc;
+        } catch (error) {
+          console.warn(`Invalid JSON in tool call arguments for ${tc.function.name}:`, tc.function.arguments);
+          return null;
+        }
+      })
+      .filter(tc => tc !== null);
+    
+    
+    return {
+      content: accumulatedContent,
+      tool_calls: finalToolCalls
+    };
+  }
+
   private forwardChildEvents(childAgent: Agent): void {
     // Forward lifecycle events
     childAgent.on('agentStarted', (data) => this.emit('childStarted', data));
@@ -342,6 +521,9 @@ export class Agent extends EventEmitter implements TypedEventEmitter {
     // Forward execution events
     childAgent.on('llmCall', (data) => this.emit('childLlmCall', data));
     childAgent.on('toolCalls', (data) => this.emit('childToolCalls', data));
+    childAgent.on('toolCallStarted', (data) => this.emit('childToolCallStarted', data));
+    childAgent.on('toolCallCompleted', (data) => this.emit('childToolCallCompleted', data));
+    childAgent.on('streamChunk', (data) => this.emit('childStreamChunk', data));
     
     // Forward nested child events (recursive)
     childAgent.on('childCreated', (data) => this.emit('childCreated', data));
@@ -350,6 +532,9 @@ export class Agent extends EventEmitter implements TypedEventEmitter {
     childAgent.on('childError', (data) => this.emit('childError', data));
     childAgent.on('childLlmCall', (data) => this.emit('childLlmCall', data));
     childAgent.on('childToolCalls', (data) => this.emit('childToolCalls', data));
+    childAgent.on('childToolCallStarted', (data) => this.emit('childToolCallStarted', data));
+    childAgent.on('childToolCallCompleted', (data) => this.emit('childToolCallCompleted', data));
+    childAgent.on('childStreamChunk', (data) => this.emit('childStreamChunk', data));
   }
 
   private async handleStopAgent(params: StopAgentParams): Promise<string> {
@@ -371,29 +556,23 @@ export class Agent extends EventEmitter implements TypedEventEmitter {
     
     // Add builtin tools (except for max depth agents)
     if (this.depth < this.config.maxDepth!) {
-      const createAgentMeta = ToolRegistry.getMetadata('createAgent');
-      if (createAgentMeta) tools.push(createAgentMeta);
+      tools.push(createAgentMetadata);
     }
     
-    const stopAgentMeta = ToolRegistry.getMetadata('stopAgent');
-    if (stopAgentMeta) tools.push(stopAgentMeta);
+    tools.push(stopAgentMetadata);
     
     // Add user-specified tools
-    for (const toolName of this.tools) {
-      const metadata = ToolRegistry.getMetadata(toolName);
-      if (metadata) {
-        tools.push(metadata);
-      }
+    for (const tool of this.tools) {
+      tools.push({
+        name: tool.name,
+        description: tool.description,
+        parameters: tool.parameters
+      });
     }
     
     return tools;
   }
 
-  private initializeBuiltinTools(): void {
-    // Import builtin tools to trigger registration
-    require('../tools/builtins/createAgent');
-    require('../tools/builtins/stopAgent');
-  }
 
   // Getters pour inspection
   public get agentId(): string { return this.id; }

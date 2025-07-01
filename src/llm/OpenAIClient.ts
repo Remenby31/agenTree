@@ -94,6 +94,7 @@ export class OpenAIClient extends LLMClient {
         continue;
       }
 
+
       const streamChunk: LLMStreamChunk = {
         content: delta.content || undefined,
         tool_calls: delta.tool_calls?.map(tc => ({
@@ -102,7 +103,8 @@ export class OpenAIClient extends LLMClient {
           function: {
             name: tc.function?.name || '',
             arguments: tc.function?.arguments || ''
-          }
+          },
+          index: tc.index // Preserve the index from OpenAI
         })),
         done: chunk.choices[0]?.finish_reason !== null
       };
