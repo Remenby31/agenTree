@@ -1,10 +1,18 @@
 # AgenTree 🌳
 
+> **Hierarchical AI agents that summon other agents recursively, like a Tree**
+
 TypeScript library for creating hierarchical AI agents that recursively decompose tasks by spawning specialized child agents.
+
+AgenTree is a TypeScript library that enables AI agents to recursively break down complex tasks by creating specialized child agents. Each agent can dynamically define the role, context, and tools of its children, forming an intelligent task decomposition tree.
 
 ## Concept
 
+[![npm version](https://badge.fury.io/js/agentree.svg)](https://www.npmjs.com/package/agentree)
+[![TypeScript](https://img.shields.io/badge/TypeScript-Ready-blue.svg)](https://www.typescriptlang.org/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 An agent receives a complex task, analyzes what subtasks are needed, creates child agents with specific roles and tools, and coordinates their execution. Each child can create its own children up to a configurable depth, forming an execution tree.
+
 
 ```
 📋 Task: "Research and write market analysis"
