@@ -102,7 +102,7 @@ export AGENTREE_MAX_DEPTH="5"
 
 ### Environment File (.env)
 
-```env
+```bash
 # .env file
 OPENAI_API_KEY=sk-your-api-key
 LLM_BASE_URL=https://api.openai.com/v1

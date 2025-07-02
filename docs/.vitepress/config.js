@@ -1,5 +1,5 @@
 export default {
-  title: 'AgenTree',
+  title: '🌳 AgenTree',
   description: 'Hierarchical AI agents for TypeScript',
   
   // Configuration cruciale pour GitHub Pages
@@ -7,8 +7,8 @@ export default {
   
   themeConfig: {
     nav: [
-      { text: 'Guide', link: '/guide/getting-started' },
-      { text: 'API Reference', link: '/api/agent' },
+      { text: 'Getting Started', link: '/guide/getting-started' },
+      { text: 'Core Concepts', link: '/guide/core-concepts' },
       { text: 'Examples', link: '/examples/' },
       { text: 'GitHub', link: 'https://github.com/Remenby31/agentree' }
     ],
