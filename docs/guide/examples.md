@@ -1,12 +1,12 @@
-# Exemples d’utilisation avancée d’AgenTree
+# Advanced Usage Examples of AgenTree
 
-Cette page présente des cas d’usage concrets et avancés d’AgenTree, illustrés par du code réel. Elle s’adresse aux développeurs souhaitant exploiter pleinement la flexibilité du framework pour créer des agents personnalisés, intégrer des outils métiers et gérer les événements de manière fine.
+This page presents concrete and advanced use cases of AgenTree, illustrated by real code. It is intended for developers wishing to fully exploit the flexibility of the framework to create custom agents, integrate business tools and manage events in a fine-grained manner.
 
 ---
 
-## 1. Création d’un outil personnalisé
+## 1. Creating a custom tool
 
-AgenTree permet de définir facilement des outils métiers avec validation de paramètres grâce à [Zod](https://zod.dev/).
+AgenTree makes it easy to define business tools with parameter validation thanks to [Zod](https://zod.dev/).
 
 ```typescript
 import { tool } from '../src';
@@ -35,16 +35,16 @@ const calculatorTool = tool({
 
 ---
 
-## 2. Instanciation et configuration d’un agent
+## 2. Instantiating and configuring an agent
 
-L’agent est configuré avec un ou plusieurs outils, une tâche, et des options avancées (modèle, profondeur, streaming, etc.).
+The agent is configured with one or more tools, a task, and advanced options (model, depth, streaming, etc.).
 
 ```typescript
 import { Agent } from '../src';
 
 const agent = new Agent({
   name: "test-agent",
-  task: "Utilise l’outil calculator pour additionner 25 et 17, puis multiplie le résultat par 3.",
+  task: "Use the calculator tool to add 25 and 17, then multiply the result by 3.",
   tools: [calculatorTool],
   config: {
     apiKey: process.env.OPENAI_KEY_API,
@@ -58,65 +58,65 @@ const agent = new Agent({
 
 ---
 
-## 3. Gestion avancée des événements
+## 3. Advanced event management
 
-AgenTree expose de nombreux événements pour monitorer l’exécution, réagir aux étapes clés ou intégrer du logging personnalisé.
+AgenTree exposes many events to monitor execution, react to key steps or integrate custom logging.
 
 ```typescript
 agent.on('agentCompleted', (result) => {
-  console.log('Agent terminé avec succès:', result);
+  console.log('Agent completed successfully:', result);
 });
 
 agent.on('childCreated', (child) => {
-  console.log('Agent enfant créé:', child);
+  console.log('Child agent created:', child);
 });
 
-// Résumé des appels d’outils
+// Summary of tool calls
 agent.on('toolCalls', (data) => {
-  console.log('📋 Outils appelés:', data.toolCalls.join(', '));
+  console.log('📋 Tools called:', data.toolCalls.join(', '));
 });
 
-// Suivi granulaire des outils
+// Granular tool tracking
 agent.on('toolCallStarted', (data) => {
-  console.log(`🚀 Outil démarré: ${data.toolName}`);
-  console.log(`   Entrée: ${JSON.stringify(data.toolInput)}`);
+  console.log(`🚀 Tool started: ${data.toolName}`);
+  console.log(`   Input: ${JSON.stringify(data.toolInput)}`);
 });
 
 agent.on('toolCallCompleted', (data) => {
   if (data.toolError) {
-    console.log(`❌ Échec: ${data.toolName} (${data.duration}ms)`);
-    console.log(`   Erreur: ${data.toolError}`);
+    console.log(`❌ Failure: ${data.toolName} (${data.duration}ms)`);
+    console.log(`   Error: ${data.toolError}`);
   } else {
-    console.log(`✅ Terminé: ${data.toolName} (${data.duration}ms)`);
-    console.log(`   Sortie: ${data.toolOutput}`);
+    console.log(`✅ Completed: ${data.toolName} (${data.duration}ms)`);
+    console.log(`   Output: ${data.toolOutput}`);
   }
 });
 
-// Streaming de la sortie (si activé)
+// Streaming output (if enabled)
 agent.on('streamChunk', (data) => {
   if (data.chunk.content) {
     process.stdout.write(`💭 ${data.chunk.content}`);
   }
   if (data.chunk.done) {
-    console.log('\n🏁 Stream terminé');
+    console.log('\n🏁 Stream finished');
   }
 });
 ```
 
 ---
 
-## 4. Conseils pour aller plus loin
+## 4. Tips for going further
 
-- **Ajout d’outils métiers** : Inspirez-vous de la structure de `calculatorTool` pour intégrer vos propres outils (API, scripts, etc.).
-- **Gestion du contexte** : Utilisez le système de contexte pour fournir des données ou des fichiers à l’agent (voir [`docs/guide/context-loading.md`](context-loading.md)).
-- **Décomposition de tâches** : Profitez de la capacité d’AgenTree à créer des agents enfants pour orchestrer des workflows complexes (voir [`docs/guide/task-decomposition.md`](task-decomposition.md)).
-- **Monitoring & Debug** : Branchez-vous sur les événements pour tracer, monitorer ou déboguer l’exécution (voir [`docs/guide/debugging.md`](debugging.md)).
+- **Adding business tools**: Take inspiration from the structure of `calculatorTool` to integrate your own tools (API, scripts, etc.).
+- **Context management**: Use the context system to provide data or files to the agent (see [`docs/guide/context-loading.md`](context-loading.md)).
+- **Task decomposition**: Take advantage of AgenTree's ability to create child agents to orchestrate complex workflows (see [`docs/guide/task-decomposition.md`](task-decomposition.md)).
+- **Monitoring & Debug**: Connect to events to trace, monitor or debug execution (see [`docs/guide/debugging.md`](debugging.md)).
 
 ---
 
-## 5. Références croisées
+## 5. Cross-references
 
-- [API Agent](../api/agent.md)
-- [Système d’outils](tools-system.md)
-- [Gestion des événements](event-system.md)
-- [Exemples additionnels](../examples/index.md)
+- [Agent API](../api/agent.md)
+- [Tool system](tools-system.md)
+- [Event management](event-system.md)
+- [Additional examples](../examples/index.md)

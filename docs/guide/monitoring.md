@@ -1,32 +1,32 @@
-# Monitoring technique d’AgenTree
+# AgenTree Technical Monitoring
 
 ## Introduction
 
-Le système de monitoring d’AgenTree permet de suivre en temps réel l’exécution des agents, de collecter des métriques, de tracer les événements clés et de personnaliser la supervision selon les besoins du développeur. Il s’appuie sur une architecture événementielle et des stratégies modulaires.
+The AgenTree monitoring system allows real-time tracking of agent execution, collection of metrics, tracing of key events, and customization of supervision according to the developer's needs. It relies on an event-driven architecture and modular strategies.
 
 ---
 
-## Architecture du monitoring
+## Monitoring Architecture
 
-Le cœur du monitoring repose sur la classe [`AgentMonitor`](../../src/monitoring/AgentMonitoring.ts), qui observe les agents via des événements :
+The core of the monitoring system is based on the [`AgentMonitor`](../../src/monitoring/AgentMonitoring.ts) class, which observes agents via events:
 
-- **Événements surveillés** :  
+- **Monitored Events**:
   - `agentCreated`, `agentStarted`, `agentCompleted`, `agentError`
   - `contextLoaded`, `llmCall`, `toolCalls`
   - `childCreated`
-- **Options de configuration** ([`MonitoringOptions`](../../src/monitoring/AgentMonitoring.ts)):
+- **Configuration Options** ([`MonitoringOptions`](../../src/monitoring/AgentMonitoring.ts)):
   - `logLevel` : `'silent' | 'basic' | 'detailed' | 'verbose'`
-  - `colors`, `timestamps`, `indentation` : personnalisation de l’affichage
-  - `saveToFile` : chemin du fichier de log (optionnel)
-  - `customLogger` : fonction de logging personnalisée
+  - `colors`, `timestamps`, `indentation`: display customization
+  - `saveToFile`: log file path (optional)
+  - `customLogger`: custom logging function
 
-L’état d’exécution est maintenu dans une structure `agentTree` (arbre des agents, profondeur, parenté).
+The execution state is maintained in an `agentTree` structure (agent tree, depth, parentage).
 
 ---
 
-## Utilisation de base
+## Basic Usage
 
-### Monitoring détaillé (recommandé)
+### Detailed Monitoring (recommended)
 
 ```ts
 import { AgentMonitor } from 'src/monitoring/AgentMonitoring';
@@ -35,7 +35,7 @@ const monitor = new AgentMonitor({ logLevel: 'detailed' });
 monitor.monitor(agent);
 ```
 
-### Monitoring simple
+### Simple Monitoring
 
 ```ts
 import { MonitoringPresets } from 'src/monitoring/presets';
@@ -43,7 +43,7 @@ import { MonitoringPresets } from 'src/monitoring/presets';
 MonitoringPresets.simple(agent);
 ```
 
-### Monitoring production (minimal)
+### Production Monitoring (minimal)
 
 ```ts
 MonitoringPresets.production(agent);
@@ -51,60 +51,60 @@ MonitoringPresets.production(agent);
 
 ---
 
-## Stratégies avancées et extension
+## Advanced Strategies and Extension
 
-### Presets prêts à l’emploi
+### Ready-to-use Presets
 
-La classe [`MonitoringPresets`](../../src/monitoring/presets.ts) propose des stratégies adaptées :
+The [`MonitoringPresets`](../../src/monitoring/presets.ts) class offers adapted strategies:
 
-- `simple(agent)` : logs concis, adaptés au debug rapide
-- `detailed(agent)` : monitoring hiérarchique, couleurs, indentation
-- `production(agent)` : logs sobres pour la prod
-- `withMetrics(agent, cb?)` : collecte et callback de métriques (agents, LLM, outils, erreurs, temps total)
-- `withLogging(agent, logFile?)` : enregistrement dans un fichier
-- `realtime(agent, websocket?)` : monitoring temps réel via WebSocket
-- `custom(agent, options)` : écoute sélective d’événements, callbacks personnalisés
+- `simple(agent)`: concise logs, suitable for quick debugging
+- `detailed(agent)`: hierarchical monitoring, colors, indentation
+- `production(agent)`: sober logs for production
+- `withMetrics(agent, cb?)`: metrics collection and callback (agents, LLM, tools, errors, total time)
+- `withLogging(agent, logFile?)`: saving to a file
+- `realtime(agent, websocket?)`: real-time monitoring via WebSocket
+- `custom(agent, options)`: selective event listening, custom callbacks
 
-### Filtrage et hiérarchie
+### Filtering and Hierarchy
 
-- `parentOnly`, `childrenOnly`, `byDepth`, `byParent` : filtrage des événements selon la profondeur ou la parenté
-- `hierarchical(agent)` : affichage arborescent avec indentation
+- `parentOnly`, `childrenOnly`, `byDepth`, `byParent`: filtering of events according to depth or parentage
+- `hierarchical(agent)`: tree-like display with indentation
 
 ### Extension
 
-- **Logger custom** : injecter une fonction dans `customLogger` pour rediriger les logs (ex : dashboard, stockage distant)
-- **Callbacks** : brancher des fonctions sur les événements pour déclencher des actions ou collecter des données spécifiques
+- **Custom Logger**: inject a function into `customLogger` to redirect logs (e.g., dashboard, remote storage)
+- **Callbacks**: attach functions to events to trigger actions or collect specific data
 
 ---
 
-## Bonnes pratiques
+## Best Practices
 
-- **Choisir le preset adapté** :  
-  - `detailed` pour le développement,  
-  - `production` pour la prod,  
-  - `withMetrics` pour l’analyse.
-- **Limiter le niveau de log en production** (`logLevel: 'basic'` ou `'silent'`)
-- **Exploiter l’arbre d’agents** pour visualiser la décomposition des tâches
-- **Utiliser les callbacks** pour intégrer le monitoring à des outils externes (alerting, dashboards)
-- **Centraliser les logs** via `saveToFile` ou un logger custom
+- **Choose the appropriate preset**:
+  - `detailed` for development,
+  - `production` for production,
+  - `withMetrics` for analysis.
+- **Limit the log level in production** (`logLevel: 'basic'` or `'silent'`)
+- **Exploit the agent tree** to visualize task decomposition
+- **Use callbacks** to integrate monitoring with external tools (alerting, dashboards)
+- **Centralize logs** via `saveToFile` or a custom logger
 
 ---
 
-## Référence rapide
+## Quick Reference
 
-| Fonction / preset         | Usage principal                        |
+| Function / preset         | Main usage                             |
 |--------------------------|----------------------------------------|
-| `AgentMonitor`           | Monitoring configurable, extensible    |
-| `simple`                 | Logs concis, debug rapide              |
-| `detailed`               | Vue hiérarchique, riche                |
-| `production`             | Logs sobres, adaptés à la prod         |
-| `withMetrics`            | Collecte de métriques                  |
-| `withLogging`            | Sauvegarde dans un fichier             |
-| `realtime`               | Monitoring temps réel (WebSocket)      |
-| `custom`                 | Stratégie sur-mesure, callbacks        |
+| `AgentMonitor`           | Configurable, extensible monitoring    |
+| `simple`                 | Concise logs, quick debugging          |
+| `detailed`               | Hierarchical, rich view                |
+| `production`             | Sober logs, suitable for production    |
+| `withMetrics`            | Metrics collection                     |
+| `withLogging`            | Saving to a file                       |
+| `realtime`               | Real-time monitoring (WebSocket)       |
+| `custom`                 | Custom strategy, callbacks             |
 
 ---
 
-Pour plus de détails, voir le code source :  
+For more details, see the source code:
 [`src/monitoring/AgentMonitoring.ts`](../../src/monitoring/AgentMonitoring.ts)  
 [`src/monitoring/presets.ts`](../../src/monitoring/presets.ts)

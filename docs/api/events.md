@@ -1,56 +1,56 @@
-# API des événements AgenTree
+# AgenTree Events API
 
-Cette page documente le système d’événements d’AgenTree, destiné à la supervision, l’extension et l’intégration fine du comportement des agents.
-
----
-
-## Architecture du système d’événements
-
-AgenTree utilise un système d’événements fortement typé pour notifier l’évolution du cycle de vie des agents, des appels LLM, des outils, du contexte, et des agents enfants.  
-Chaque événement transporte un payload structuré, facilitant la supervision, le monitoring, l’extension ou l’intégration avec d’autres systèmes.
-
-Les événements sont typés via l’interface AgentEvents, qui mappe chaque nom d’événement à la signature de son callback.
+This page documents the AgenTree event system, designed for monitoring, extending, and finely integrating agent behavior.
 
 ---
 
-## Types d’événements
+## Event System Architecture
 
-### 1. Cycle de vie de l’agent
+AgenTree uses a strongly typed event system to notify the evolution of the lifecycle of agents, LLM calls, tools, context, and child agents.
+Each event carries a structured payload, facilitating supervision, monitoring, extension, or integration with other systems.
 
-- **`agentCreated`** : Création d’un agent  
-  Payload : [`AgentEventData`]
-- **`agentStarted`** : Démarrage d’un agent  
-  Payload : [`AgentEventData`]
-- **`agentCompleted`** : Fin d’un agent  
-  Payload : [`AgentResultEventData`]
-- **`agentError`** : Erreur lors de l’exécution  
-  Payload : [`AgentErrorEventData`]
-
-### 2. Exécution et contexte
-
-- **`contextLoaded`** : Chargement du contexte  
-  Payload : [`ContextLoadEventData`]
-- **`llmCall`** : Appel à un LLM  
-  Payload : [`LLMCallEventData`]
-- **`toolCalls`** : Appels d’outils (batch)  
-  Payload : [`ToolCallEventData`]
-- **`toolCallStarted`** : Début d’un appel d’outil  
-  Payload : [`ToolCallStartedEventData`]
-- **`toolCallCompleted`** : Fin d’un appel d’outil  
-  Payload : [`ToolCallCompletedEventData`]
-- **`streamChunk`** : Réception d’un chunk de flux  
-  Payload : [`StreamChunkEventData`]
-
-### 3. Agents enfants
-
-- **`childCreated`** : Création d’un agent enfant  
-  Payload : [`ChildAgentEventData`]
+Events are typed via the AgentEvents interface, which maps each event name to the signature of its callback.
 
 ---
 
-## Structure des payloads
+## Event Types
 
-Chaque événement possède un payload structuré, héritant généralement de [`AgentEventData`] :
+### 1. Agent Lifecycle
+
+- **`agentCreated`**: Agent creation
+  Payload: [`AgentEventData`]
+- **`agentStarted`**: Agent startup
+  Payload: [`AgentEventData`]
+- **`agentCompleted`**: Agent completion
+  Payload: [`AgentResultEventData`]
+- **`agentError`**: Error during execution
+  Payload: [`AgentErrorEventData`]
+
+### 2. Execution and Context
+
+- **`contextLoaded`**: Context loading
+  Payload: [`ContextLoadEventData`]
+- **`llmCall`**: LLM call
+  Payload: [`LLMCallEventData`]
+- **`toolCalls`**: Tool calls (batch)
+  Payload: [`ToolCallEventData`]
+- **`toolCallStarted`**: Tool call start
+  Payload: [`ToolCallStartedEventData`]
+- **`toolCallCompleted`**: Tool call completion
+  Payload: [`ToolCallCompletedEventData`]
+- **`streamChunk`**: Stream chunk reception
+  Payload: [`StreamChunkEventData`]
+
+### 3. Child Agents
+
+- **`childCreated`**: Child agent creation
+  Payload: [`ChildAgentEventData`]
+
+---
+
+## Payload Structure
+
+Each event has a structured payload, generally inheriting from [`AgentEventData`]:
 
 ```typescript
 interface AgentEventData {
@@ -63,35 +63,34 @@ interface AgentEventData {
 }
 ```
 
-Les événements spécialisés ajoutent des champs :
+Specialized events add fields:
 
-- **Résultat** : `result`, `executionTime`, `success`
-- **Erreur** : `error`, `stack`
-- **LLM** : `messageCount`, `availableTools`, `model`
-- **Outils** : `toolCalls`, `toolDetails`, `toolName`, `toolInput`, `toolOutput`, `toolError`, `duration`, `toolCallId`
-- **Flux** : `chunk`, `accumulatedContent`
-- **Contexte** : `context` (fichiers, URLs, textes)
-- **Agents enfants** : `parentId`, `parentName`, `childId`, `childName`, `childTask`
-
+- **Result**: `result`, `executionTime`, `success`
+- **Error**: `error`, `stack`
+- **LLM**: `messageCount`, `availableTools`, `model`
+- **Tools**: `toolCalls`, `toolDetails`, `toolName`, `toolInput`, `toolOutput`, `toolError`, `duration`, `toolCallId`
+- **Stream**: `chunk`, `accumulatedContent`
+- **Context**: `context` (files, URLs, texts)
+- **Child Agents**: `parentId`, `parentName`, `childId`, `childName`, `childTask`
 
 ---
 
-## Utilisation : écouter et émettre des événements
+## Usage: Listening to and Emitting Events
 
-### Écoute d’événements
+### Listening to Events
 
-Pour réagir à un événement, abonnez-vous via le système d’événements de l’agent :
+To react to an event, subscribe via the agent's event system:
 
 ```typescript
 agent.on('agentCompleted', (data) => {
-  console.log('Agent terminé :', data);
+  console.log('Agent completed:', data);
 });
 ```
 
-### Émission d’événements
+### Emitting Events
 
-Les événements sont généralement émis automatiquement par le cœur d’AgenTree.  
-Pour émettre un événement personnalisé :
+Events are generally emitted automatically by the AgenTree core.
+To emit a custom event:
 
 ```typescript
 agent.emit('agentError', {
@@ -100,14 +99,14 @@ agent.emit('agentError', {
   task: '...',
   depth: 0,
   timestamp: new Date().toISOString(),
-  error: 'Message d’erreur'
+  error: 'Error message'
 });
 ```
 
-### Extension : nouveaux événements
+### Extension: New Events
 
-Pour étendre le système, ajoutez une nouvelle clé dans l’interface `AgentEvents` et définissez le payload associé.  
-Exemple :
+To extend the system, add a new key to the `AgentEvents` interface and define the associated payload.
+Example:
 
 ```typescript
 interface AgentEvents {
@@ -118,37 +117,37 @@ interface AgentEvents {
 
 ---
 
-## Exemples concrets
+## Concrete Examples
 
-### Suivi du cycle de vie
+### Lifecycle Tracking
 
 ```typescript
 agent.on('agentStarted', (data) => {
-  // Initialisation de logs ou de métriques
+  // Log or metric initialization
 });
 agent.on('agentCompleted', (data) => {
-  // Traitement du résultat final
+  // Final result processing
 });
 ```
 
-### Monitoring des outils
+### Tool Monitoring
 
 ```typescript
 agent.on('toolCallStarted', (data) => {
-  console.log(`Outil ${data.toolName} appelé`);
+  console.log(`Tool ${data.toolName} called`);
 });
 agent.on('toolCallCompleted', (data) => {
   if (data.toolError) {
-    console.error('Erreur outil :', data.toolError);
+    console.error('Tool error:', data.toolError);
   }
 });
 ```
 
 ---
 
-## Génération des payloads
+## Payload Generation
 
-Utilisez la classe *EventDataBuilder* pour générer des payloads cohérents :
+Use the *EventDataBuilder* class to generate consistent payloads:
 
 ```typescript
 const eventData = EventDataBuilder.createResultEventData(agent, result, 123);

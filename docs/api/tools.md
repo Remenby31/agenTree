@@ -1,76 +1,76 @@
-# API des outils AgenTree
+# AgenTree Tools API
 
-Cette page documente l’architecture, l’interface et l’extension du système d’outils d’AgenTree, à destination des développeurs.
+This page documents the architecture, interface, and extension of the AgenTree tool system, intended for developers.
 
 ---
 
-## Architecture générale
+## General Architecture
 
-Le système d’outils d’AgenTree repose sur :
-- Une interface normalisée pour chaque outil (`Tool`)
-- Un registre centralisé (`ToolRegistry`) pour l’enregistrement et la découverte
-- Un utilitaire de création d’outils (`tool`) facilitant la validation des paramètres et l’intégration
+The AgenTree tool system is based on:
+- A standardized interface for each tool (`Tool`)
+- A centralized registry (`ToolRegistry`) for registration and discovery
+- A tool creation utility (`tool`) facilitating parameter validation and integration
 
-### Interfaces principales
+### Main Interfaces
 
 #### [`ToolOptions<T>`](../../src/tools/ToolHelper.ts)
-Décrit les options nécessaires à la création d’un outil :
-- `name?` : nom de l’outil (optionnel, sinon déduit)
-- `description` : description textuelle
-- `parameters` : schéma Zod des paramètres attendus
-- `strict?` : validation stricte (par défaut : true)
-- `execute` : fonction asynchrone exécutant l’outil
-- `errorFunction?` : gestionnaire d’erreur personnalisé
+Describes the options required to create a tool:
+- `name?`: tool name (optional, otherwise deduced)
+- `description`: textual description
+- `parameters`: Zod schema of expected parameters
+- `strict?`: strict validation (default: true)
+- `execute`: asynchronous function executing the tool
+- `errorFunction?`: custom error handler
 
 #### [`Tool`](../../src/tools/ToolHelper.ts)
-Représente un outil enregistré :
-- `name` : nom unique
-- `description` : description
-- `parameters` : schéma JSON Schema dérivé du schéma Zod
-- `execute(args, context?)` : exécution de l’outil
-- `errorFunction?` : gestionnaire d’erreur
+Represents a registered tool:
+- `name`: unique name
+- `description`: description
+- `parameters`: JSON Schema derived from the Zod schema
+- `execute(args, context?)`: tool execution
+- `errorFunction?`: error handler
 
 #### [`ToolRegistry`](../../src/tools/ToolRegistry.ts)
-Registre statique centralisant tous les outils :
-- `register(tool)` : enregistre un outil
-- `get(name)` : récupère un outil par son nom
-- `list()` : liste les noms d’outils enregistrés
-- `clear()` : vide le registre
-- `has(name)` : vérifie la présence d’un outil
-- `getAll()` : retourne tous les outils
+Static registry centralizing all tools:
+- `register(tool)`: registers a tool
+- `get(name)`: retrieves a tool by its name
+- `list()`: lists the names of registered tools
+- `clear()`: clears the registry
+- `has(name)`: checks for the presence of a tool
+- `getAll()`: returns all tools
 
 ---
 
-## Création d’un outil
+## Creating a Tool
 
-Utilisez la fonction [`tool`](../../src/tools/ToolHelper.ts) pour transformer une configuration en un objet `Tool` conforme :
+Use the [`tool`](../../src/tools/ToolHelper.ts) function to transform a configuration into a compliant `Tool` object:
 
 ```typescript
 import { z } from 'zod';
 import { tool } from 'src/tools/ToolHelper';
 
 const myToolSchema = z.object({
-  input: z.string().describe("Entrée à traiter"),
+  input: z.string().describe("Input to process"),
 });
 
 const myTool = tool({
   name: 'myTool',
-  description: 'Un outil exemple',
+  description: 'An example tool',
   parameters: myToolSchema,
   execute: async (args) => {
-    // Traitement
-    return `Entrée : ${args.input}`;
+    // Processing
+    return `Input: ${args.input}`;
   }
 });
 ```
 
-La validation des paramètres est automatique (via Zod) si `strict` est à `true`.
+Parameter validation is automatic (via Zod) if `strict` is set to `true`.
 
 ---
 
-## Enregistrement et utilisation
+## Registration and Usage
 
-Pour rendre un outil disponible dans AgenTree, il doit être enregistré :
+To make a tool available in AgenTree, it must be registered:
 
 ```typescript
 import { ToolRegistry } from 'src/tools/ToolRegistry';
@@ -78,7 +78,7 @@ import { ToolRegistry } from 'src/tools/ToolRegistry';
 ToolRegistry.register(myTool);
 ```
 
-L’outil peut ensuite être retrouvé et utilisé dynamiquement :
+The tool can then be retrieved and used dynamically:
 
 ```typescript
 const tool = ToolRegistry.get('myTool');
@@ -90,9 +90,9 @@ if (tool) {
 
 ---
 
-## Extension : créer un outil personnalisé
+## Extension: Creating a Custom Tool
 
-Exemple : outil de lecture de fichier ([`readFileTool`](../../src/tools/defaults/readFile.ts)) :
+Example: file reading tool ([`readFileTool`](../../src/tools/defaults/readFile.ts)):
 
 ```typescript
 import { z } from 'zod';
@@ -100,17 +100,17 @@ import { tool } from 'src/tools/ToolHelper';
 import * as fs from 'fs-extra';
 
 const readFileSchema = z.object({
-  path: z.string().describe("Chemin vers le fichier à lire"),
+  path: z.string().describe("Path to the file to read"),
 });
 
 export const readFileTool = tool({
   name: 'readFile',
-  description: "Lit le contenu d'un fichier",
+  description: "Reads the content of a file",
   parameters: readFileSchema,
   execute: async (args) => {
     const { path } = args;
     if (!await fs.pathExists(path)) {
-      throw new Error(`Le fichier ${path} n'existe pas`);
+      throw new Error(`The file ${path} does not exist`);
     }
     const content = await fs.readFile(path, 'utf-8');
     return content;
@@ -120,24 +120,24 @@ export const readFileTool = tool({
 
 ---
 
-## Gestion des schémas de paramètres
+## Parameter Schema Management
 
-Les schémas de paramètres sont définis avec [Zod](https://zod.dev/) et convertis automatiquement en JSON Schema pour l’API.  
-Les types supportés incluent : chaînes, nombres, booléens, objets, tableaux, énumérations, champs optionnels et valeurs par défaut.
-
----
-
-## Bonnes pratiques
-
-- Utilisez des descriptions explicites pour chaque paramètre
-- Gérez les erreurs via `errorFunction` si besoin
-- Privilégiez la validation stricte pour la robustesse
-- Enregistrez vos outils au démarrage de l’application
+Parameter schemas are defined with [Zod](https://zod.dev/) and automatically converted to JSON Schema for the API.
+Supported types include: strings, numbers, booleans, objects, arrays, enumerations, optional fields, and default values.
 
 ---
 
-## Voir aussi
+## Best Practices
 
-- [Types et interfaces de base](./types.md)
-- [Outils intégrés](./built-in-tools.md)
-- [Guide d’extension des outils](../guide/custom-tools.md)
+- Use explicit descriptions for each parameter
+- Handle errors via `errorFunction` if needed
+- Prioritize strict validation for robustness
+- Register your tools when the application starts
+
+---
+
+## See Also
+
+- [Basic types and interfaces](./types.md)
+- [Built-in tools](./built-in-tools.md)
+- [Tool extension guide](../guide/custom-tools.md)
