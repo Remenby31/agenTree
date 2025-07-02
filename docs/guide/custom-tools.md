@@ -1,81 +1,121 @@
-# Translating Custom Tools
+# Custom Tools
 
-Translating custom tools in AgenTree involves translating the tool's description. Currently, AgenTree does not provide a built-in translation mechanism. However, you can implement your own translation solution using a translation library such as `i18next` or `lingui`.
+Create custom tools to extend your agents' capabilities.
 
-Here's an example of how you can translate a tool's description:
+## Quick Start
+
+1. Define your tool schema with Zod
+2. Use the `tool()` helper function
+3. Register it (optional) or pass it directly to agents
+
+## Basic Example
 
 ```typescript
-import { tool } from 'src/tools/ToolHelper';
 import { z } from 'zod';
-import i18next from 'i18next';
+import { tool } from '../tools/ToolHelper';
 
-// Initialize i18next (or another translation library)
-i18next.init({
-  lng: 'en', // Default language
-  resources: {
-    en: {
-      translation: {
-        'searchTool.description': 'Tool to perform web searches.',
-      },
-    },
-  },
+// Weather Tool Example
+const weatherTool = tool({
+  name: 'get_weather',
+  description: 'Get weather for a city',
+  parameters: z.object({
+    city: z.string()
+  }),
+  execute: async ({ city }) => {
+    return `The weather in ${city} is sunny!`;
+  }
 });
 
-const searchTool = tool({
-  name: 'searchTool',
-  description: i18next.t('searchTool.description'),
-  parameters: z.object({
-    query: z.string().describe('The search query.'),
-  }),
-  execute: async (args) => {
-    // Search tool implementation
-    return `Searching for ${args.query}`;
-  },
+```
+
+## Using Tools
+
+### Direct usage (recommended)
+```typescript
+import { Agent } from 'agentree';
+import { weatherTool } from './my-tools';
+
+const agent = new Agent({
+  name: 'Weather Bot',
+  task: 'Help with weather',
+  tools: [weatherTool], // Pass tool objects directly
+  config: { model: 'gpt-4', apiKey: 'your-key' }
 });
 ```
 
-In this example, we use `i18next` to translate the description of the `searchTool` tool. The description is stored in a translation file and retrieved using the `i18next.t()` function.
+## More Examples
 
-You can also translate the descriptions of the tool's parameters using the `describe()` method of `zod`.
-
+### Calculator Tool
 ```typescript
-import { tool } from 'src/tools/ToolHelper';
-import { z } from 'zod';
-import i18next from 'i18next';
-
-// Initialize i18next (or another translation library)
-i18next.init({
-  lng: 'en', // Default language
-  resources: {
-    en: {
-      translation: {
-        'searchTool.query.description': 'The search term.',
-      },
-    },
-  },
-});
-
-const searchTool = tool({
-  name: 'searchTool',
-  description: 'Tool to perform web searches.',
+const calculatorTool = tool({
+  name: 'calculator',
+  description: 'Perform math calculations',
   parameters: z.object({
-    query: z.string().describe(i18next.t('searchTool.query.description')),
+    operation: z.enum(['add', 'subtract', 'multiply', 'divide']),
+    a: z.number(),
+    b: z.number()
   }),
-  execute: async (args) => {
-    // Search tool implementation
-    return `Searching for ${args.query}`;
-  },
+  execute: async ({ operation, a, b }) => {
+    switch (operation) {
+      case 'add': return `${a} + ${b} = ${a + b}`;
+      case 'subtract': return `${a} - ${b} = ${a - b}`;
+      case 'multiply': return `${a} × ${b} = ${a * b}`;
+      case 'divide': 
+        if (b === 0) throw new Error('Cannot divide by zero');
+        return `${a} ÷ ${b} = ${a / b}`;
+    }
+  }
 });
 ```
 
-In this example, we translate the description of the `query` parameter of the `searchTool` tool.
+### HTTP API Tool
+```typescript
+const apiTool = tool({
+  name: 'httpRequest',
+  description: 'Make HTTP requests',
+  parameters: z.object({
+    url: z.string().url(),
+    method: z.enum(['GET', 'POST']).default('GET'),
+    body: z.any().optional()
+  }),
+  execute: async ({ url, method, body }) => {
+    const response = await fetch(url, {
+      method,
+      headers: { 'Content-Type': 'application/json' },
+      body: body ? JSON.stringify(body) : undefined
+    });
+    
+    return await response.text();
+  }
+});
+```
 
-In summary, to translate custom tools in AgenTree, you need to:
+## Schema Validation
 
-1.  Choose a translation library.
-2.  Initialize the translation library.
-3.  Store the descriptions of the tools and parameters in translation files.
-4.  Retrieve the translated descriptions using the translation library.
-5.  Use the translated descriptions when creating the tool.
+Use Zod's full power for validation:
 
-Remember to adapt the code examples to your own configuration and preferred translation library.
+```typescript
+const userSchema = z.object({
+  email: z.string().email().describe("User's email"),
+  age: z.number().min(0).max(120).describe("User's age"),
+  preferences: z.object({
+    theme: z.enum(['light', 'dark']).default('light'),
+    notifications: z.boolean().default(true)
+  }).optional()
+});
+```
+
+## Testing Tools
+
+Test your tools directly:
+
+```typescript
+// Test the tool
+const result = await weatherTool.execute({ 
+  city: 'Paris', 
+  units: 'celsius' 
+});
+console.log(result); // "Weather in Paris: 25°C"
+```
+
+That's it! Your custom tools will work with AgentTree's event system, streaming, and monitoring.
