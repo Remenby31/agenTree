@@ -1,69 +1,40 @@
 # AgenTree 🌳
 
-> **Hierarchical AI agents that decompose tasks automatically**
+TypeScript library for creating hierarchical AI agents that recursively decompose tasks by spawning specialized child agents.
 
-AgenTree is a TypeScript library that enables AI agents to recursively break down complex tasks by creating specialized child agents. Each agent can dynamically define the role, context, and tools of its children, forming an intelligent task decomposition tree.
+## Concept
 
-[![npm version](https://badge.fury.io/js/agentree.svg)](https://www.npmjs.com/package/agentree)
-[![TypeScript](https://img.shields.io/badge/TypeScript-Ready-blue.svg)](https://www.typescriptlang.org/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+An agent receives a complex task, analyzes what subtasks are needed, creates child agents with specific roles and tools, and coordinates their execution. Each child can create its own children up to a configurable depth, forming an execution tree.
 
-## ✨ Key Features
-
-- **🧠 Intelligent Task Decomposition** - Agents automatically break down complex tasks into manageable subtasks
-- **🎯 Dynamic Role Assignment** - Parent agents define specialized roles and tools for their children
-- **📁 Automatic Documentation** - Complete execution traces saved as structured markdown reports  
-- **🔧 Easy Tool Creation** - Transform any function into an agent tool with Zod schema validation
-- **🔌 MCP Integration** - Native support for Model Context Protocol servers
-- **📊 Real-time Monitoring** - Track agent creation and task progress with event callbacks
-
-## 📖 Documentation
-
-Check out the full documentation [here](https://remenby31.github.io/agenTree/).
-
-## 🛠️ Default Tools
-
-The library includes a set of default tools that can be easily imported and used in your agents.
-
-### Individual Import
-
-```typescript
-import { readFileTool, writeFileTool } from 'agentree';
-
-const agent = new Agent({
-  name: 'MyAgent',
-  task: 'Analyze files',
-  tools: [readFileTool, writeFileTool],
-  maxDepth: 3
-});
+```
+📋 Task: "Research and write market analysis"
+└── 📊 Market Research Agent
+    ├── 🔍 Data Collection Agent  
+    ├── 📈 Trend Analysis Agent
+    └── 💰 Competitor Analysis Agent
+└── ✍️ Writing Agent
+    └── 📝 Report Generation Agent
 ```
 
-### Grouped Import
+## Installation
 
-```typescript
-import { defaultTools } from 'agentree';
-
-const agent = new Agent({
-  name: 'MyAgent',
-  task: 'Full task',
-  tools: defaultTools, // All default tools
-  maxDepth: 3
-});
+```bash
+npm install agentree zod
 ```
 
-## � Quick Start
+## Basic Usage
 
 ```typescript
 import { Agent, tool } from 'agentree';
 import { z } from 'zod';
 
-// Define tools using the tool() helper with Zod schemas
+// Define tools using Zod schemas
 const webSearchTool = tool({
   name: 'web_search',
   description: 'Search the web for information',
   parameters: z.object({
-    query: z.string().describe('The search query'),
-    maxResults: z.number().default(5).describe('Maximum number of results to return')
+    query: z.string(),
+    maxResults: z.number().default(5)
   }),
   async execute({ query, maxResults }) {
     // Your implementation
@@ -71,440 +42,259 @@ const webSearchTool = tool({
   }
 });
 
-const readFileTool = tool({
-  name: 'read_file',
-  description: 'Read content from a file',
-  parameters: z.object({
-    filePath: z.string().describe('Path to the file to read')
-  }),
-  async execute({ filePath }) {
-    return fs.readFileSync(filePath, 'utf8');
-  }
-});
-
-// Create and execute an agent
+// Create and execute agent
 const agent = new Agent({
-  name: "market-researcher",
-  task: "Research our competitors and create a detailed analysis report",
-  context: [
-    "./company-info.md",
-    "https://industry-report.com/2025-trends"
-  ],
-  tools: [webSearchTool, readFileTool],
+  name: "researcher",
+  task: "Research latest developments in quantum computing",
+  tools: [webSearchTool],
   maxDepth: 3,
   config: {
-    model: "claude-3-sonnet",
+    model: "gpt-4",
+    apiKey: process.env.OPENAI_API_KEY,
     outputFile: true
   }
 });
 
 const result = await agent.execute();
-console.log("Analysis complete! Check .agentree/ for detailed reports");
 ```
 
-## 🧠 How It Works
+→ [More examples in documentation](https://remenby31.github.io/agenTree/examples/)
 
-Unlike traditional AI frameworks where you predefine agent roles, **AgenTree agents create their own specialized children on-demand**:
+## Architecture
 
-1. **📝 Parent receives a complex task**
-2. **🤔 Analyzes what subtasks are needed** 
-3. **👶 Creates specialized child agents** with custom roles, context, and tools
-4. **🔄 Children can create their own children** (up to max depth)
-5. **📊 Results bubble up** through the hierarchy
-6. **📁 Complete execution tree** saved as organized markdown reports
+### Built-in Tools
 
-### Example Decomposition
+Every agent has access to:
+- `createAgent`: Spawn child agents for subtasks
+- `stopAgent`: Return final results
+- Default tools: `readFile`, `writeFile`, `searchTool`, `replaceFile`, `bash`
 
-```
-🎯 Task: "Launch a new product"
-└── 📊 Market Research Agent
-    ├── 🔍 Competitor Analysis Agent  
-    ├── 📈 Trend Analysis Agent
-    └── 💰 Pricing Research Agent
-└── 📋 Strategy Planning Agent
-    ├── 🎨 Marketing Strategy Agent
-    └── 📅 Timeline Planning Agent
-```
+→ [Built-in tools reference](https://remenby31.github.io/agenTree/api/built-in-tools)
 
-## 📖 Complete Examples
-
-### Basic Usage
+### Tool Creation
 
 ```typescript
-const contentCreator = new Agent({
-  name: "content-creator",
-  task: "Write a blog post about sustainable technology",
-  tools: [webSearchTool, readFileTool],
-  maxDepth: 3
-});
-
-await contentCreator.execute();
-```
-
-### With Custom Context
-
-```typescript
-const readCSVTool = tool({
-  name: 'read_csv',
-  description: 'Read and parse CSV data',
-  parameters: z.object({
-    filePath: z.string().describe('Path to the CSV file')
-  }),
-  async execute({ filePath }) {
-    // CSV parsing implementation
-    return parsedData;
-  }
-});
-
-const agent = new Agent({
-  name: "sales-analyzer",
-  task: "Analyze Q1 sales performance and identify improvement opportunities",
-  context: [
-    "./data/sales-q1.csv",           // File context
-    "./docs/sales-methodology.md",   // Documentation context
-    "Our target market is SMB SaaS companies" // Text context
-  ],
-  tools: [readCSVTool, calculateMetrics, generateChart],
-  maxDepth: 3
-});
-```
-
-### Advanced Configuration
-
-```typescript
-const agent = new Agent({
-  name: "strategic-planner",
-  task: "Develop a 2025 product roadmap",
-  tools: [webSearchTool, readFileTool, dataAnalysis],
-  maxDepth: 4,
-  config: {
-    baseUrl: "https://api.anthropic.com",
-    model: "claude-4-sonnet",
-    apiKey: process.env.ANTHROPIC_API_KEY,
-    outputFile: true,
-    outputFolder: "./reports"
-  }
-});
-```
-
-### Real-time Monitoring
-
-```typescript
-const agent = new Agent({
-  name: "researcher",
-  task: "Research market trends",
-  tools: [webSearchTool],
-  maxDepth: 3
-});
-
-// Monitor agent tree creation
-agent.on('agentCreated', (childAgent) => {
-  console.log(`✨ Created: ${childAgent.name} - ${childAgent.task}`);
-});
-
-agent.on('agentCompleted', (childAgent, result) => {
-  console.log(`✅ Completed: ${childAgent.name}`);
-});
-
-await agent.execute();
-```
-
-### List of Events
-
-#### 🤖 Agent Lifecycle Events
-
-| Event | Description | Data Properties |
-|-------|-------------|-----------------|
-| `agentCreated` | Agent instance created | `{ id, name, task, depth, parentId?, timestamp }` |
-| `agentStarted` | Agent execution started | `{ id, name, task, depth, parentId?, timestamp }` |
-| `agentCompleted` | Agent execution completed | `{ id, name, result, executionTime, success, depth, parentId?, timestamp }` |
-| `agentError` | Error occurred in agent | `{ id, name, error, stack?, depth, parentId?, timestamp }` |
-
-#### 📋 Execution Events
-
-| Event | Description | Data Properties |
-|-------|-------------|-----------------|
-| `contextLoaded` | Context files/URLs loaded | `{ id, name, context: { fileCount, urlCount, textCount }, depth, parentId? }` |
-| `llmCall` | LLM API call initiated | `{ id, name, messageCount, availableTools, model?, depth, parentId? }` |
-| `toolCalls` | Tool execution batch (legacy) | `{ id, name, toolCalls: string[], toolDetails?, depth, parentId? }` |
-| `toolCallStarted` | Individual tool execution started | `{ id, name, toolName, toolInput, toolCallId, depth, parentId? }` |
-| `toolCallCompleted` | Individual tool execution finished | `{ id, name, toolName, toolOutput?, toolError?, duration, toolCallId, depth, parentId? }` |
-| `streamChunk` | Streaming response chunk received | `{ id, name, chunk, accumulatedContent, depth, parentId? }` |
-
-#### 👥 Hierarchy Events
-
-| Event | Description | Data Properties |
-|-------|-------------|-----------------|
-| `childCreated` | Child agent created | `{ parentId, parentName, childId, childName, childTask, depth }` |
-
-#### 📊 Event Data Properties
-
-**Common Properties** (present in all events):
-- `id`: Unique agent identifier
-- `name`: Agent name
-- `timestamp`: ISO timestamp when event occurred
-- `depth`: Agent depth in hierarchy
-- `parentId?`: Parent agent ID (if child agent)
-
-**Execution Properties**:
-- `executionTime`: Duration in milliseconds
-- `success`: Boolean indicating success/failure
-- `messageCount`: Number of messages in conversation
-- `availableTools`: Array of tool names available to agent
-
-**Tool Properties**:
-- `toolName`: Name of the tool being executed
-- `toolInput`: Input parameters passed to tool
-- `toolOutput?`: Result returned by tool (if successful)
-- `toolError?`: Error message (if tool failed)
-- `toolCallId`: Unique identifier for the tool call
-- `duration`: Tool execution time in milliseconds
-
-**Streaming Properties**:
-- `chunk`: Individual streaming chunk data
-- `accumulatedContent`: All content received so far
-- `done`: Boolean indicating if stream is complete
-
-
-## 🔧 Creating Custom Tools
-
-Transform any function into an agent tool using the `tool()` helper with Zod schema validation:
-
-```typescript
-import { tool } from 'agentree';
-import { z } from 'zod';
-
-// Analyze CSV data tool
-const analyzeCSVTool = tool({
-  name: 'analyze_csv',
-  description: 'Analyze CSV data and generate insights',
-  parameters: z.object({
-    filePath: z.string().describe('Path to the CSV file'),
-    groupBy: z.string().describe('Column to group data by'),
-    metric: z.enum(['sum', 'avg', 'count']).default('count').describe('Metric to calculate')
-  }),
-  async execute({ filePath, groupBy, metric }) {
-    const data = await readCSV(filePath);
-    return performAnalysis(data, groupBy, metric);
-  }
-});
-
-// API call tool
-const apiCallTool = tool({
-  name: 'api_call',
-  description: 'Send data to an external API',
-  parameters: z.object({
-    endpoint: z.string().url().describe('API endpoint URL'),
-    data: z.any().describe('Data to send')
-  }),
-  async execute({ endpoint, data }) {
-    return fetch(endpoint, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data)
-    }).then(r => r.json());
-  }
-});
-
-// Database query tool with custom error handling
 const dbQueryTool = tool({
-  name: 'db_query',
-  description: 'Execute a database query',
+  name: 'query_database',
+  description: 'Execute SQL queries',
   parameters: z.object({
-    query: z.string().describe('SQL query to execute'),
-    params: z.array(z.any()).optional().describe('Query parameters')
+    query: z.string(),
+    params: z.array(z.any()).optional()
   }),
   async execute({ query, params = [] }) {
     return await database.query(query, params);
-  },
-  errorFunction: (context, error) => {
-    return `Database error: ${error.message}. Please check your query syntax.`;
   }
 });
 ```
 
-### Tool Options Reference
+→ [Custom tools guide](https://remenby31.github.io/agenTree/guide/custom-tools)
 
-| Field | Required | Description |
-|-------|----------|-------------|
-| `name` | No | Defaults to the function name (e.g., `get_weather`) |
-| `description` | Yes | Clear, human-readable description shown to the LLM |
-| `parameters` | Yes | Zod schema object defining the tool parameters |
-| `strict` | No | When `true` (default), returns error if arguments don't validate |
-| `execute` | Yes | `(args, context) => string \| Promise<string>` – your business logic |
-| `errorFunction` | No | Custom handler `(context, error) => string` for error transformation |
+### Event System
 
-## 🔌 MCP Integration
+Monitor agent execution with typed events:
 
-AgenTree supports Model Context Protocol servers out of the box:
-
-### Remote MCP Servers
+#### Basic Monitoring
 
 ```typescript
-import { MCPServer } from 'agentree';
+// Simple progress tracking
+agent.on('agentCompleted', (data) => {
+  console.log(`✅ ${data.name} finished in ${data.executionTime}ms`);
+});
 
-// Connect to remote MCP servers
-const dbServer = new MCPServer("sqlite://./company.db");
-const webServer = new MCPServer("web-scraper://config.json");
+agent.on('childCreated', (data) => {
+  console.log(`👶 Created child: ${data.childName}`);
+});
 
-const agent = new Agent({
-  name: "data-analyst",
-  task: "Find patterns in our customer data and compare with industry benchmarks",
-  tools: [
-    ...dbServer.tools,    // Database tools auto-discovered
-    ...webServer.tools,   // Web scraping tools
-    customAnalysis        // Your custom tools
-  ],
-  maxDepth: 3
+agent.on('agentError', (data) => {
+  console.error(`❌ Error in ${data.name}: ${data.error}`);
 });
 ```
 
-### Local MCP Servers
+#### Tool Performance Tracking
 
 ```typescript
-import { Agent, MCPServerStdio } from 'agentree';
+const toolMetrics = new Map();
 
-// Spawn and connect to local MCP server
-const server = new MCPServerStdio({
-  fullCommand: 'npx -y @modelcontextprotocol/server-filesystem ./sample_files',
+agent.on('toolCallStarted', (data) => {
+  toolMetrics.set(data.toolCallId, Date.now());
 });
-await server.connect();
 
-const agent = new Agent({
-  name: 'file-assistant',
-  mcpServers: [server],
-  task: 'Analyze the files in our project directory',
-  maxDepth: 3
+agent.on('toolCallCompleted', (data) => {
+  console.log(`🔧 ${data.toolName}: ${data.duration}ms`);
+  if (data.toolError) {
+    console.error(`   Error: ${data.toolError}`);
+  }
 });
 ```
 
-## 📁 Output Structure
-
-AgenTree automatically creates organized reports in your specified output folder:
-
-```
-.agentree/
-└── market-research-2025-06-19-14-30/
-    ├── agent-report.md                    # Root agent report
-    ├── competitive-analysis/
-    │   ├── agent-report.md               # Child agent report
-    │   ├── pricing-research/
-    │   │   └── agent-report.md           # Grandchild agent report
-    │   └── feature-comparison/
-    │       └── agent-report.md
-    └── trend-analysis/
-        ├── agent-report.md
-        └── market-sizing/
-            └── agent-report.md
-```
-
-Each report contains:
-- 📋 **Task description** and context used
-- 🛠️ **Tools** available to the agent  
-- 💭 **Thought process** and reasoning
-- 📊 **Results** and findings
-- 🔗 **Links** to child agent reports
-
-## ⚙️ Installation
-
-```bash
-npm install agentree zod
-```
-
-### Environment Setup
-
-```bash
-# For Anthropic Claude
-export ANTHROPIC_API_KEY="your-api-key"
-
-# For OpenAI
-export OPENAI_API_KEY="your-api-key"
-
-# For custom endpoints
-export LLM_BASE_URL="https://your-llm-endpoint.com"
-```
-
-## 📚 API Reference
-
-### Agent
+#### Hierarchical Logging
 
 ```typescript
-class Agent {
-  constructor(options: AgentOptions)
-  execute(): Promise<AgentResult>
-  on(event: string, callback: Function): void
-}
-
-interface AgentOptions {
-  name: string;              // Agent identifier
-  task: string;              // Task description  
-  context?: string[];        // Context (files, URLs, text)
-  tools?: Tool[];            // Available tools
-  mcpServers?: MCPServer[];  // MCP servers
-  config?: AgentTreeConfig;  // Configuration
-}
+agent.on('agentCreated', (data) => {
+  const indent = '  '.repeat(data.depth);
+  console.log(`${indent}🤖 ${data.name} (depth ${data.depth})`);
+});
 ```
 
-### Configuration
+#### Real-time Streaming
+
+```typescript
+agent.on('streamChunk', (data) => {
+  if (data.chunk.content) {
+    process.stdout.write(data.chunk.content);
+  }
+});
+```
+
+#### Complete Event Reference
+
+| Event | Description | Key Data Properties |
+|-------|-------------|-------------------|
+| `agentCreated` | Agent instance created | `id`, `name`, `task`, `depth`, `parentId?` |
+| `agentStarted` | Agent execution started | `id`, `name`, `depth` |
+| `agentCompleted` | Agent execution finished | `id`, `name`, `result`, `executionTime`, `success` |
+| `agentError` | Error occurred in agent | `id`, `name`, `error`, `stack?` |
+| `contextLoaded` | Context files/URLs loaded | `id`, `name`, `context: {fileCount, urlCount, textCount}` |
+| `llmCall` | LLM API call initiated | `id`, `name`, `messageCount`, `availableTools[]` |
+| `toolCalls` | Tool execution batch (legacy) | `id`, `name`, `toolCalls[]`, `toolDetails?` |
+| `toolCallStarted` | Individual tool started | `id`, `name`, `toolName`, `toolInput`, `toolCallId` |
+| `toolCallCompleted` | Individual tool finished | `id`, `name`, `toolName`, `toolOutput?`, `toolError?`, `duration` |
+| `streamChunk` | Streaming response chunk | `id`, `name`, `chunk: {content?, done}`, `accumulatedContent` |
+| `childCreated` | Child agent created | `parentId`, `parentName`, `childId`, `childName`, `childTask` |
+
+**Common properties**: All events include `id`, `name`, `timestamp`, `depth`, `parentId?`
+
+→ [Complete event system guide](https://remenby31.github.io/agenTree/guide/event-system)
+
+## Configuration
 
 ```typescript
 interface AgentTreeConfig {
-  baseUrl?: string;          // LLM endpoint URL
-  model?: string;            // Model name
-  apiKey?: string;           // API key
-  maxDepth?: number;         // Max tree depth (default: 5)
-  outputFile?: boolean;      // Save reports (default: true)  
-  outputFolder?: string;     // Output directory (default: .agentree)
+  baseUrl?: string;        // LLM endpoint
+  model?: string;          // Model name
+  apiKey?: string;         // API key
+  maxDepth?: number;       // Max hierarchy depth (default: 5)
+  outputFile?: boolean;    // Generate markdown reports (default: true)
+  outputFolder?: string;   // Output directory (default: .agentree)
+  streaming?: boolean;     // Enable streaming (default: false)
 }
 ```
 
-### Tool Helper
+### Environment Variables
+
+```bash
+# OpenAI
+export OPENAI_API_KEY="your-key"
+
+# Custom endpoint
+export LLM_BASE_URL="https://your-llm-endpoint.com"
+```
+
+→ [Configuration guide](https://remenby31.github.io/agenTree/guide/configuration)
+
+## Output Structure
+
+Each execution generates structured reports:
+
+```
+.agentree/
+└── researcher-2025-07-02-14-30/
+    ├── agent-report.md          # Main report
+    ├── conversation.md          # LLM conversation log
+    ├── execution-log.json       # Event stream
+    ├── metadata.json           # Agent metadata
+    └── data-collector/         # Child agent folder
+        ├── agent-report.md
+        └── conversation.md
+```
+
+→ [Output management guide](https://remenby31.github.io/agenTree/guide/output-management)
+
+## Default Tools
 
 ```typescript
-import { tool } from 'agentree';
-import { z } from 'zod';
+import { defaultTools, readFileTool, writeFileTool } from 'agentree';
 
-const myTool = tool({
-  name?: string;                              // Tool name
-  description: string;                        // Tool description
-  parameters: z.ZodSchema;                    // Zod parameter schema
-  strict?: boolean;                           // Strict validation (default: true)
-  execute: (args, context?) => Promise<any>; // Tool execution
-  errorFunction?: (context, error) => string; // Custom error handler
+// Individual import
+const agent = new Agent({
+  tools: [readFileTool, writeFileTool]
+});
+
+// All default tools
+const agent = new Agent({
+  tools: defaultTools
 });
 ```
 
-## 🗺️ Roadmap
+Available: `readFile`, `writeFile`, `searchTool`, `replaceFile`, `bash`
 
-- [ ] **Parallel execution** - Run sibling agents concurrently
-- [ ] **Agent memory** - Persistent memory across task decompositions  
-- [ ] **Visual debugger** - Web UI for monitoring agent trees
-- [ ] **Plugin ecosystem** - Marketplace for pre-built agent tools
-- [ ] **Multi-modal support** - Image and video processing capabilities
-- [ ] **Agent collaboration** - Cross-branch communication in agent trees
+→ [Default tools documentation](https://remenby31.github.io/agenTree/api/built-in-tools)
 
-## 🤝 Contributing
+## Monitoring
 
-We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
+```typescript
+import { AgentMonitor } from 'agentree';
 
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+const monitor = new AgentMonitor({
+  logLevel: 'detailed',
+  colors: true,
+  timestamps: true
+});
 
-## 📄 License
+monitor.monitor(agent);
+```
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+→ [Monitoring guide](https://remenby31.github.io/agenTree/guide/monitoring)
 
-## 🙏 Acknowledgments
+## Documentation
 
-- Inspired by hierarchical task decomposition research
-- Built with modern TypeScript and AI best practices
-- Thanks to the open source community for invaluable feedback
+Complete documentation: [https://remenby31.github.io/agenTree/](https://remenby31.github.io/agenTree/)
 
----
+- [Getting Started](https://remenby31.github.io/agenTree/guide/getting-started)
+- [API Reference](https://remenby31.github.io/agenTree/api/agent)
+- [Examples](https://remenby31.github.io/agenTree/examples/)
 
-**Ready to build intelligent agent trees?** Start with our [Quick Start Guide](#-quick-start) or explore the [examples](./examples) directory!
+## Development
 
-[![Star this repo](https://img.shields.io/github/stars/Remenby31/agentree?style=social)](https://github.com/Remenby31/agentree)
+```bash
+# Build
+npm run build
+
+# Development
+npm run dev
+
+# Examples
+npm run example
+npm run example:complex
+
+# View execution logs
+npm run view list
+npm run view show <run-id>
+
+# Cleanup
+npm run cleanup old --keep 10
+```
+
+→ [Development guide](https://remenby31.github.io/agenTree/development/contributing)
+
+### Project Structure
+
+```
+src/
+├── core/           # Agent, Task, Config
+├── llm/            # LLM clients
+├── tools/          # Tool system
+├── output/         # File generation
+├── monitoring/     # Event system
+└── types/          # TypeScript definitions
+```
+
+## Requirements
+
+- Node.js 18+
+- TypeScript 5+
+- LLM API key (OpenAI/compatible)
+
+## License
+
+MIT
