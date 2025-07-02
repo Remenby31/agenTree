@@ -17,6 +17,10 @@ AgenTree is a TypeScript library that enables AI agents to recursively break dow
 - **🔌 MCP Integration** - Native support for Model Context Protocol servers
 - **📊 Real-time Monitoring** - Track agent creation and task progress with event callbacks
 
+## 📖 Documentation
+
+Check out the full documentation [here](https://remenby31.github.io/agenTree/).
+
 ## 🛠️ Default Tools
 
 The library includes a set of default tools that can be easily imported and used in your agents.
@@ -503,4 +507,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 **Ready to build intelligent agent trees?** Start with our [Quick Start Guide](#-quick-start) or explore the [examples](./examples) directory!
 
-[![Star this repo](https://img.shields.io/github/stars/yourusername/agentree?style=social)](https://github.com/yourusername/agentree)
+[![Star this repo](https://img.shields.io/github/stars/Remenby31/agentree?style=social)](https://github.com/Remenby31/agentree)
