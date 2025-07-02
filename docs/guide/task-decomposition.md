@@ -318,9 +318,3 @@ Write tasks that naturally break down:
 - Watch decomposition patterns
 - Adjust task descriptions based on results
 - Fine-tune maxDepth based on complexity
-
-## Next Steps
-
-- [Tools System](/guide/tools-system) - Create tools that support good decomposition
-- [Context Loading](/guide/context-loading) - Provide rich context for better decisions
-- [Examples](/examples/hierarchical-processing) - See decomposition in action

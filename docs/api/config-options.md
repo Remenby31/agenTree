@@ -580,7 +580,7 @@ if (env === 'production') {
 
 ### Example .env File
 
-```env
+```text
 # LLM Configuration
 OPENAI_API_KEY=sk-your-openai-api-key
 LLM_MODEL=gpt-4-turbo

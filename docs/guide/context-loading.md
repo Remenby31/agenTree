@@ -429,9 +429,3 @@ context: [
 // Be careful with user-provided URLs
 // Consider URL validation and domain allowlisting
 ```
-
-## Next Steps
-
-- [Output Management](/guide/output-management) - How context influences output generation
-- [Examples - File Processing](/examples/file-processing) - See context loading in action
-- [API Reference - Task](/api/types-reference#task) - Technical details on context handling

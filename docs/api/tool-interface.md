@@ -708,10 +708,3 @@ const fileTool = tool({
   }
 });
 ```
-
-## See Also
-
-- [Built-in Tools](/api/built-in-tools) - Reference for default tools
-- [Agent Class](/api/agent-class) - Using tools with agents
-- [Examples - Custom Tools](/examples/custom-tools) - Practical tool examples
-- [Types Reference](/api/types-reference) - Complete type definitions

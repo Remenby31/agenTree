@@ -13,7 +13,7 @@ Le système d’outils d’AgenTree repose sur :
 
 ### Interfaces principales
 
-#### [`ToolOptions<T>`](../../src/tools/ToolHelper.ts#L3)
+#### [`ToolOptions<T>`](../../src/tools/ToolHelper.ts)
 Décrit les options nécessaires à la création d’un outil :
 - `name?` : nom de l’outil (optionnel, sinon déduit)
 - `description` : description textuelle
@@ -22,7 +22,7 @@ Décrit les options nécessaires à la création d’un outil :
 - `execute` : fonction asynchrone exécutant l’outil
 - `errorFunction?` : gestionnaire d’erreur personnalisé
 
-#### [`Tool`](../../src/tools/ToolHelper.ts#L12)
+#### [`Tool`](../../src/tools/ToolHelper.ts)
 Représente un outil enregistré :
 - `name` : nom unique
 - `description` : description
@@ -30,7 +30,7 @@ Représente un outil enregistré :
 - `execute(args, context?)` : exécution de l’outil
 - `errorFunction?` : gestionnaire d’erreur
 
-#### [`ToolRegistry`](../../src/tools/ToolRegistry.ts#L3)
+#### [`ToolRegistry`](../../src/tools/ToolRegistry.ts)
 Registre statique centralisant tous les outils :
 - `register(tool)` : enregistre un outil
 - `get(name)` : récupère un outil par son nom
@@ -43,7 +43,7 @@ Registre statique centralisant tous les outils :
 
 ## Création d’un outil
 
-Utilisez la fonction [`tool`](../../src/tools/ToolHelper.ts#L106) pour transformer une configuration en un objet `Tool` conforme :
+Utilisez la fonction [`tool`](../../src/tools/ToolHelper.ts) pour transformer une configuration en un objet `Tool` conforme :
 
 ```typescript
 import { z } from 'zod';
@@ -92,7 +92,7 @@ if (tool) {
 
 ## Extension : créer un outil personnalisé
 
-Exemple : outil de lecture de fichier ([`readFileTool`](../../src/tools/defaults/readFile.ts#L9)) :
+Exemple : outil de lecture de fichier ([`readFileTool`](../../src/tools/defaults/readFile.ts)) :
 
 ```typescript
 import { z } from 'zod';

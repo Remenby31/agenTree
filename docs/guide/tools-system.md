@@ -448,9 +448,3 @@ const fileTool = tool({
   }
 });
 ```
-
-## Next Steps
-
-- [API Reference - Tools](/api/tool-interface) - Complete tool interface documentation
-- [Examples - Custom Tools](/examples/custom-tools) - More tool examples
-- [Built-in Tools](/api/built-in-tools) - Reference for default tools

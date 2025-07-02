@@ -617,10 +617,3 @@ Error: Command failed with exit code 1: npm test
 Error: File too large to process efficiently
 ```
 **Solution:** Use streaming for large files or process in chunks
-
-## See Also
-
-- [Tool Interface](/api/tool-interface) - Creating custom tools
-- [Agent Class](/api/agent-class) - Using tools with agents
-- [Examples - Custom Tools](/examples/custom-tools) - Advanced tool examples
-- [Types Reference](/api/types-reference) - Complete type definitions

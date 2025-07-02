@@ -689,9 +689,3 @@ const getDebugConfig = () => {
 4. **Analyze Events** - Use execution-log.json for detailed timeline
 5. **Test Tools Individually** - Isolate tool issues
 6. **Verify Context** - Ensure context loads correctly
-
-## Next Steps
-
-- [Configuration](/guide/configuration) - Debug configuration issues
-- [Event System](/guide/event-system) - Use events for debugging
-- [Development](/development/contributing) - Contribute debugging improvements

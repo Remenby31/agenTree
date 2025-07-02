@@ -462,9 +462,3 @@ const agent = new Agent({
   }
 });
 ```
-
-## Next Steps
-
-- [Event System](/guide/event-system) - Monitor execution in real-time
-- [Development Guide](/development/contributing) - Use viewer tools for debugging
-- [API Reference - Config](/api/config-options) - Complete configuration options

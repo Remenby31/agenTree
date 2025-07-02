@@ -719,10 +719,3 @@ agent.on('agentCompleted', (data) => {
   }
 });
 ```
-
-## See Also
-
-- [Event System Guide](/guide/event-system) - Comprehensive event usage guide
-- [Agent Class](/api/agent-class) - Agent event methods
-- [Debugging](/guide/debugging) - Using events for debugging
-- [Examples - Monitoring](/examples/monitoring) - Practical event usage examples
