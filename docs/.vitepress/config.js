@@ -2,6 +2,9 @@ export default {
   title: 'AgenTree',
   description: 'Hierarchical AI agents for TypeScript',
   
+  // Configuration cruciale pour GitHub Pages
+  base: '/agenTree/',
+  
   themeConfig: {
     nav: [
       { text: 'Guide', link: '/guide/getting-started' },

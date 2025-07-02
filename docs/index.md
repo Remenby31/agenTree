@@ -2,12 +2,9 @@
 layout: home
 
 hero:
-  name: "AgenTree"
+  name: "🌳 AgenTree"
   text: "Hierarchical AI Agents"
   tagline: AI agents that create specialized children automatically
-  image:
-    src: /logo.svg
-    alt: AgenTree
   actions:
     - theme: brand
       text: Get Started
