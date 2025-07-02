@@ -43,6 +43,7 @@ export class Agent extends EventEmitter implements TypedEventEmitter {
   private readonly llmClient: LLMClient;
   private readonly parentId?: string;
   private readonly depth: number;
+  private readonly maxDepth: number;
   
   private messages: LLMMessage[] = [];
   private children: Agent[] = [];
@@ -78,6 +79,7 @@ export class Agent extends EventEmitter implements TypedEventEmitter {
     
     this.parentId = agentConfig.parentId;
     this.depth = agentConfig.depth || 0;
+    this.maxDepth = agentConfig.maxDepth ?? 5;
     
     // Initialize LLM client - for now only OpenAI
     this.llmClient = new OpenAIClient(this.config);
@@ -381,8 +383,8 @@ export class Agent extends EventEmitter implements TypedEventEmitter {
   }
 
   private async handleCreateAgent(params: CreateAgentParams): Promise<string> {
-    if (this.depth >= this.config.maxDepth!) {
-      throw new Error(`Maximum depth ${this.config.maxDepth} reached`);
+    if (this.depth >= this.maxDepth) {
+      throw new Error(`Maximum depth ${this.maxDepth} reached`);
     }
     
     // Get parent output path for child
@@ -394,6 +396,7 @@ export class Agent extends EventEmitter implements TypedEventEmitter {
       context: params.context,
       tools: params.tools,
       config: this.config,
+      maxDepth: this.maxDepth,
       parentId: this.id,
       depth: this.depth + 1,
       parentPath: parentPath // Pass parent path for child output
@@ -537,7 +540,7 @@ export class Agent extends EventEmitter implements TypedEventEmitter {
     const tools: ToolMetadata[] = [];
     
     // Add builtin tools (except for max depth agents)
-    if (this.depth < this.config.maxDepth!) {
+    if (this.depth < this.maxDepth) {
       tools.push(createAgentMetadata);
     }
     

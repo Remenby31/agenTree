@@ -17,7 +17,37 @@ AgenTree is a TypeScript library that enables AI agents to recursively break dow
 - **🔌 MCP Integration** - Native support for Model Context Protocol servers
 - **📊 Real-time Monitoring** - Track agent creation and task progress with event callbacks
 
-## 🚀 Quick Start
+## 🛠️ Default Tools
+
+The library includes a set of default tools that can be easily imported and used in your agents.
+
+### Individual Import
+
+```typescript
+import { readFileTool, writeFileTool } from 'agentree';
+
+const agent = new Agent({
+  name: 'MyAgent',
+  task: 'Analyze files',
+  tools: [readFileTool, writeFileTool],
+  maxDepth: 3
+});
+```
+
+### Grouped Import
+
+```typescript
+import { defaultTools } from 'agentree';
+
+const agent = new Agent({
+  name: 'MyAgent',
+  task: 'Full task',
+  tools: defaultTools, // All default tools
+  maxDepth: 3
+});
+```
+
+## � Quick Start
 
 ```typescript
 import { Agent, tool } from 'agentree';
@@ -57,9 +87,9 @@ const agent = new Agent({
     "https://industry-report.com/2025-trends"
   ],
   tools: [webSearchTool, readFileTool],
+  maxDepth: 3,
   config: {
     model: "claude-3-sonnet",
-    maxDepth: 3,
     outputFile: true
   }
 });
@@ -100,7 +130,8 @@ Unlike traditional AI frameworks where you predefine agent roles, **AgenTree age
 const contentCreator = new Agent({
   name: "content-creator",
   task: "Write a blog post about sustainable technology",
-  tools: [webSearchTool, readFileTool]
+  tools: [webSearchTool, readFileTool],
+  maxDepth: 3
 });
 
 await contentCreator.execute();
@@ -122,14 +153,15 @@ const readCSVTool = tool({
 });
 
 const agent = new Agent({
-  name: "sales-analyzer", 
+  name: "sales-analyzer",
   task: "Analyze Q1 sales performance and identify improvement opportunities",
   context: [
     "./data/sales-q1.csv",           // File context
-    "./docs/sales-methodology.md",   // Documentation context  
+    "./docs/sales-methodology.md",   // Documentation context
     "Our target market is SMB SaaS companies" // Text context
   ],
-  tools: [readCSVTool, calculateMetrics, generateChart]
+  tools: [readCSVTool, calculateMetrics, generateChart],
+  maxDepth: 3
 });
 ```
 
@@ -140,11 +172,11 @@ const agent = new Agent({
   name: "strategic-planner",
   task: "Develop a 2025 product roadmap",
   tools: [webSearchTool, readFileTool, dataAnalysis],
+  maxDepth: 4,
   config: {
     baseUrl: "https://api.anthropic.com",
-    model: "claude-4-sonnet", 
+    model: "claude-4-sonnet",
     apiKey: process.env.ANTHROPIC_API_KEY,
-    maxDepth: 4,
     outputFile: true,
     outputFolder: "./reports"
   }
@@ -157,7 +189,8 @@ const agent = new Agent({
 const agent = new Agent({
   name: "researcher",
   task: "Research market trends",
-  tools: [webSearchTool]
+  tools: [webSearchTool],
+  maxDepth: 3
 });
 
 // Monitor agent tree creation
@@ -312,12 +345,13 @@ const webServer = new MCPServer("web-scraper://config.json");
 
 const agent = new Agent({
   name: "data-analyst",
-  task: "Find patterns in our customer data and compare with industry benchmarks", 
+  task: "Find patterns in our customer data and compare with industry benchmarks",
   tools: [
     ...dbServer.tools,    // Database tools auto-discovered
     ...webServer.tools,   // Web scraping tools
     customAnalysis        // Your custom tools
-  ]
+  ],
+  maxDepth: 3
 });
 ```
 
@@ -335,7 +369,8 @@ await server.connect();
 const agent = new Agent({
   name: 'file-assistant',
   mcpServers: [server],
-  task: 'Analyze the files in our project directory'
+  task: 'Analyze the files in our project directory',
+  maxDepth: 3
 });
 ```
 

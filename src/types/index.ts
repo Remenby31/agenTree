@@ -1,7 +1,6 @@
 export interface AgentTreeConfig {
   baseUrl?: string;           // URL du LLM (ex: https://api.openai.com)
   model?: string;             // Modèle à utiliser
-  maxDepth?: number;          // Profondeur max de l'arbre (défaut: 5)
   outputFile?: boolean;       // Activer/désactiver écriture fichiers (défaut: true)
   outputFolder?: string;      // Dossier de sortie (défaut: .agentree)
   apiKey?: string;           // Clé API
@@ -14,6 +13,7 @@ export interface AgentConfig {
   context?: string[];
   tools?: Tool[] | string[];
   config?: AgentTreeConfig;
+  maxDepth?: number;          // Profondeur max de l'arbre (défaut: 5)
   parentId?: string;
   depth?: number;
   parentPath?: string;

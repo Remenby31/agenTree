@@ -28,3 +28,7 @@ export { StopAgentParams } from './tools/builtins/stopAgent';
 export * from './types/index';
 export * from './types/events';
 export * from './output/types';
+
+// Default tools exports
+export * from './tools/defaults';
+export { defaultTools } from './tools/defaults';
