@@ -9,7 +9,3 @@ const agent = new Agent({
   task: "Complete this task"
 });
 \`\`\`
-
-## Advanced Examples
-- [Market Research](./market-research)
-- [Content Creation](./content-creation)
