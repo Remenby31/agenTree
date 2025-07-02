@@ -31,7 +31,7 @@ jobs:
         run: cd docs && npm ci
         
       - name: Build docs
-        run: cd docs && npm run docs:build
+        run: cd docs && npm run build
         
       - name: Setup Pages
         uses: actions/configure-pages@v4
