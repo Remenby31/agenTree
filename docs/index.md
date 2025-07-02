@@ -14,7 +14,7 @@ hero:
       link: /guide/getting-started
     - theme: alt
       text: View on GitHub
-      link: https://github.com/votrenom/agentree
+      link: https://github.com/Remenby31/agentree
 
 features:
   - title: 🧠 Intelligent Task Decomposition

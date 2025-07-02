@@ -7,7 +7,7 @@ export default {
       { text: 'Guide', link: '/guide/getting-started' },
       { text: 'API Reference', link: '/api/agent' },
       { text: 'Examples', link: '/examples/' },
-      { text: 'GitHub', link: 'https://github.com/votrenom/agentree' }
+      { text: 'GitHub', link: 'https://github.com/Remenby31/agentree' }
     ],
 
     sidebar: {
@@ -44,7 +44,7 @@ export default {
     },
 
     socialLinks: [
-      { icon: 'github', link: 'https://github.com/votrenom/agentree' },
+      { icon: 'github', link: 'https://github.com/Remenby31/agentree' },
       { icon: 'npm', link: 'https://www.npmjs.com/package/agentree' }
     ]
   }
