@@ -6,12 +6,9 @@
 
 > **Hierarchical AI agents that summon other agents recursively, like a Tree**
 
-TypeScript library for creating hierarchical AI agents that recursively decompose tasks by spawning specialized child agents.
-
 AgenTree is a TypeScript library that enables AI agents to recursively break down complex tasks by creating specialized child agents. Each agent can dynamically define the role, context, and tools of its children, forming an intelligent task decomposition tree.
 
 ## Concept
-
 
 An agent receives a complex task, analyzes what subtasks are needed, creates child agents with specific roles and tools, and coordinates their execution. Each child can create its own children up to a configurable depth, forming an execution tree.
 
@@ -59,7 +56,7 @@ const agent = new Agent({
   tools: [webSearchTool],
   maxDepth: 3,
   config: {
-    model: "gpt-4",
+    model: "gpt-4o-mini",
     apiKey: process.env.OPENAI_API_KEY,
     outputFile: true
   }
@@ -190,7 +187,7 @@ interface AgentTreeConfig {
 }
 ```
 
-### Environment Variables
+### Environment Variables (to be changed in next update)
 
 ```bash
 # OpenAI
@@ -240,22 +237,6 @@ Available: `readFile`, `writeFile`, `searchTool`, `replaceFile`, `bash`
 
 → [Default tools documentation](https://remenby31.github.io/agenTree/api/built-in-tools)
 
-## Monitoring
-
-```typescript
-import { AgentMonitor } from 'agentree';
-
-const monitor = new AgentMonitor({
-  logLevel: 'detailed',
-  colors: true,
-  timestamps: true
-});
-
-monitor.monitor(agent);
-```
-
-→ [Monitoring guide](https://remenby31.github.io/agenTree/guide/monitoring)
-
 ## Documentation
 
 Complete documentation: [https://remenby31.github.io/agenTree/](https://remenby31.github.io/agenTree/)
@@ -275,7 +256,6 @@ npm run dev
 
 # Examples
 npm run example
-npm run example:complex
 
 # View execution logs
 npm run view list
@@ -298,12 +278,6 @@ src/
 ├── monitoring/     # Event system
 └── types/          # TypeScript definitions
 ```
-
-## Requirements
-
-- Node.js 18+
-- TypeScript 5+
-- LLM API key (OpenAI/compatible)
 
 ## License
 
