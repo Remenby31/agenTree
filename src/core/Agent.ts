@@ -391,15 +391,30 @@ export class Agent extends EventEmitter implements TypedEventEmitter {
     if (this.depth >= this.maxDepth) {
       throw new Error(`Maximum depth ${this.maxDepth} reached`);
     }
+    if (!params.tools || !Array.isArray(params.tools) || params.tools.length === 0) {
+      throw new Error('The "tools" field is required and must be a non-empty array.');
+    }
+    
+    // Clean tool names - remove invalid prefixes
+    const cleanedTools = params.tools.map(toolName => {
+      // Remove common invalid prefixes
+      if (toolName.startsWith('functions.')) {
+        return toolName.replace('functions.', '');
+      }
+      if (toolName.startsWith('tools.')) {
+        return toolName.replace('tools.', '');
+      }
+      return toolName;
+    });
     
     // Get parent output path for child
     const parentPath = this.outputManager?.getOutputPath();
-    
+
     const childAgent = new Agent({
       name: params.name,
       task: params.task,
       context: params.context,
-      tools: params.tools,
+      tools: cleanedTools,
       config: this.config,
       maxDepth: this.maxDepth,
       parentId: this.id,
@@ -492,11 +507,6 @@ export class Agent extends EventEmitter implements TypedEventEmitter {
         break;
       }
       
-      // Safety check: prevent infinite loops
-      if (chunkCount > 1000) {
-        console.warn('⚠️  Streaming exceeded 1000 chunks, breaking to prevent infinite loop');
-        break;
-      }
     }
     
     // Convert accumulated tool calls to final format
@@ -522,10 +532,17 @@ export class Agent extends EventEmitter implements TypedEventEmitter {
   }
 
   private forwardChildEvents(childAgent: Agent): void {
-    // Forward only the unique child creation event - all other events
-    // are automatically emitted by child agents with parentId/depth properties
-    // for client-side filtering if needed
+    // Forward all child events to parent for complete visibility
+    childAgent.on('agentStarted', (data) => this.emit('agentStarted', data));
+    childAgent.on('agentCompleted', (data) => this.emit('agentCompleted', data));
+    childAgent.on('agentError', (data) => this.emit('agentError', data));
     childAgent.on('childCreated', (data) => this.emit('childCreated', data));
+    childAgent.on('contextLoaded', (data) => this.emit('contextLoaded', data));
+    childAgent.on('llmCall', (data) => this.emit('llmCall', data));
+    childAgent.on('toolCallStarted', (data) => this.emit('toolCallStarted', data));
+    childAgent.on('toolCallCompleted', (data) => this.emit('toolCallCompleted', data));
+    childAgent.on('toolCalls', (data) => this.emit('toolCalls', data));
+    childAgent.on('streamChunk', (data) => this.emit('streamChunk', data));
   }
 
   private async handleStopAgent(params: StopAgentParams): Promise<string> {

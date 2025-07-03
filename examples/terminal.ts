@@ -37,7 +37,10 @@ const dim = '\x1b[2m';
 // Fonction pour obtenir le préfixe d'indentation
 function getPrefix(name: string): string {
   const info = agentHierarchy.get(name);
-  if (!info) return '';
+  if (!info) {
+    // Si l'agent n'est pas dans la hiérarchie, retourner un préfixe par défaut
+    return `\x1b[37m[${name}]\x1b[0m`;
+  }
   
   const level = info.level;
   const color = colors[level] || '\x1b[37m';
@@ -106,7 +109,7 @@ const agent = new Agent({
     outputFile: false,
     streaming: true,
   },
-  maxDepth: 2
+  maxDepth: 1
 });
 
 // Initialiser l'agent racine
@@ -139,10 +142,15 @@ agent.on('childCreated', (data) => {
 });
 
 agent.on('toolCallStarted', (data) => {
-  const prefix = getPrefix(data.name || 'terminal-agent');
+  // Utiliser le nom de l'agent qui émet l'événement, pas celui qui le reçoit
+  const agentName = data.name || 'terminal-agent';
+  const prefix = getPrefix(agentName);
   
   if (data.toolName === 'createAgent') {
     console.log(`${prefix} Creating child agent: "${data.toolInput.task}"`);
+    console.log(`${prefix} ${dim}Context: ${data.toolInput.context ? data.toolInput.context.join(', ') : 'none'}${reset}`);
+    console.log(`${prefix} ${dim}Tools: ${data.toolInput.tools ? data.toolInput.tools.join(', ') : 'default tools'}${reset}`);
+    console.log(`${prefix} ${dim}System prompt: ${data.toolInput.systemPrompt || 'none'}${reset}`);
   } else {
     console.log(`${prefix} ${dim}Calling tool: ${data.toolName} with input: ${JSON.stringify(data.toolInput)}${reset}`);
   }
@@ -157,9 +165,7 @@ agent.on('agentCompleted', (data) => {
   
   const prefix = getPrefix(data.name);
   const result = typeof data.result === 'string' ? data.result : JSON.stringify(data.result);
-  // Limiter l'affichage du résultat pour éviter le spam
-  const truncatedResult = result.length > 100 ? result.substring(0, 100) + '...' : result;
-  console.log(`${prefix} Completed: "${truncatedResult}"`);
+  console.log(`${prefix} Completed: "${result}"`);
 });
 
 agent.on('agentError', (data) => {

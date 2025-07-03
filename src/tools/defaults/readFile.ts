@@ -3,17 +3,17 @@ import { tool } from '../ToolHelper';
 import * as fs from 'fs-extra';
 
 const readFileSchema = z.object({
-  path: z.string().describe("Chemin vers le fichier à lire"),
+  path: z.string().describe("Path to the file to read").default('.'),
 });
 
 export const readFileTool = tool({
   name: 'readFile',
-  description: 'Lit le contenu d\'un fichier',
+  description: 'Read the content of a file',
   parameters: readFileSchema,
   execute: async (args) => {
     const { path } = args;
     if (!await fs.pathExists(path)) {
-      throw new Error(`Le fichier ${path} n'existe pas`);
+      throw new Error(`File ${path} does not exist, run listTree tool to see available files.`);
     }
     const content = await fs.readFile(path, 'utf-8');
     return content;

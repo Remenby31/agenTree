@@ -33,20 +33,18 @@ export class Task {
   }
 
   public getSystemPrompt(): string {
-    if (this.systemPrompt) {
-      return this.systemPrompt;
-    }
-
+    
     let prompt = `You are an AI agent named "${this.name}".
 
       Your task: ${this.description}
 
-      You have access to tools that you can use to complete this task. You can:
-      - Create child agents to handle subtasks using the "createAgent" tool
-      - Stop execution and return results using the "stopAgent" tool
-
       When you need to break down a complex task, create child agents with specific roles and tasks.
       When you have completed your work, use the stopAgent tool to return your final result.`;
+
+
+    if (this.systemPrompt) {
+      prompt += `\n\nSystem prompt: ${this.systemPrompt}`;
+    }
 
     // Add context if available
     const contextPrompt = Context.formatContextForPrompt(this.context);
