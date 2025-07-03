@@ -5,6 +5,7 @@ export interface CreateAgentParams {
   task: string;
   context?: string[];
   tools?: string[];
+  systemPrompt?: string;
 }
 
 export const createAgentMetadata: ToolMetadata = {
@@ -30,6 +31,10 @@ export const createAgentMetadata: ToolMetadata = {
         type: 'array',
         items: { type: 'string' },
         description: 'Optional list of tool names the child agent should have access to'
+      },
+      systemPrompt: {
+        type: 'string',
+        description: 'Optional custom system prompt for the child agent'
       }
     },
     required: ['name', 'task']

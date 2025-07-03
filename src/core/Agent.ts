@@ -59,7 +59,12 @@ export class Agent extends EventEmitter implements TypedEventEmitter {
     this.config = Config.merge(agentConfig.config);
     Config.validate(this.config);
     
-    this.task = new Task(agentConfig.name, agentConfig.task, agentConfig.context);
+    this.task = new Task(
+      agentConfig.name,
+      agentConfig.task,
+      agentConfig.context,
+      agentConfig.systemPrompt
+    );
     
     // Handle both Tool[] and string[] for tools
     const configTools = agentConfig.tools || [];
@@ -399,7 +404,8 @@ export class Agent extends EventEmitter implements TypedEventEmitter {
       maxDepth: this.maxDepth,
       parentId: this.id,
       depth: this.depth + 1,
-      parentPath: parentPath // Pass parent path for child output
+      parentPath: parentPath, // Pass parent path for child output
+      systemPrompt: params.systemPrompt // Permet au parent de transmettre un prompt custom
     });
 
     // Forward child events to parent with 'child' prefix

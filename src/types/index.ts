@@ -17,6 +17,7 @@ export interface AgentConfig {
   parentId?: string;
   depth?: number;
   parentPath?: string;
+  systemPrompt?: string;      // Permet de surcharger le system prompt
 }
 
 export interface AgentResult {
@@ -92,6 +93,13 @@ export interface TaskContext {
   files: Record<string, string>;
   urls: Record<string, string>;
   text: string[];
+}
+
+export interface TaskParams {
+  name: string;
+  description: string;
+  contextItems?: string[];
+  systemPrompt?: string;
 }
 
 export interface EventData {

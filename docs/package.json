@@ -1,6 +1,6 @@
 {
   "name": "vitepress-project",
-  "private": true,
+  "private": false,
   "type": "module",
   "scripts": {
     "dev": "vitepress dev",
