@@ -10,7 +10,7 @@ export interface CreateAgentParams {
 
 export const createAgentMetadata: ToolMetadata = {
   name: 'createAgent',
-  description: 'Create a child agent to handle a specific subtask',
+  description: 'Creates a new child agent to perform a specific subtask, allowing for modular task management and enhanced parallel processing.',
   parameters: {
     type: 'object',
     properties: {

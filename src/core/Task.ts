@@ -34,28 +34,31 @@ export class Task {
 
   public getSystemPrompt(): string {
     
-    let prompt = `You are an AI agent named "${this.name}".
+    let prompt = `Your task: ${this.description}
 
-      Your task: ${this.description}
-
-      When you need to break down a complex task, create child agents with specific roles and tasks.
+      You need to break down a complex task, create child agents with very specific roles, tasks and tools.
       When you have completed your work, use the stopAgent tool to return your final result.`;
 
 
     if (this.systemPrompt) {
-      prompt += `\n\nSystem prompt: ${this.systemPrompt}`;
-    }
-
-    // Add context if available
-    const contextPrompt = Context.formatContextForPrompt(this.context);
-    if (contextPrompt) {
-      prompt += `\n${contextPrompt}`;
+      prompt = `${this.systemPrompt} 
+      When you have completed your work, use the stopAgent tool to return your final result.`;
     }
 
     return prompt;
   }
 
   public getUserPrompt(): string {
-    return `${this.description}`;
+    let user_prompt = `${this.description}`;
+    if (this.context.files) {
+      user_prompt += `\n\nFiles:\n${Object.keys(this.context.files).join('\n')}`;
+    }
+    if (this.context.urls) {
+      user_prompt += `\n\nURLs:\n${Object.keys(this.context.urls).join('\n')}`;
+    }
+    if (this.context.text && this.context.text.length > 0) {
+      user_prompt += `\n\nText:\n${this.context.text.join('\n')}`;
+    }
+    return user_prompt;
   }
 }

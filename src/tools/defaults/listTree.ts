@@ -4,13 +4,13 @@ import * as fs from 'fs-extra';
 import * as path from 'path';
 
 const listTreeSchema = z.object({
-  path: z.string().optional().describe("Chemin du répertoire à analyser (défaut: répertoire courant)"),
-  maxDepth: z.number().optional().default(5).describe("Profondeur maximale de l'arbre"),
-  includeHidden: z.boolean().optional().default(false).describe("Inclure les fichiers cachés"),
-  customIgnore: z.array(z.string()).optional().describe("Dossiers supplémentaires à ignorer")
+  path: z.string().optional().describe("Path of the directory to analyze (default: current directory)"),
+  maxDepth: z.number().optional().default(5).describe("Maximum depth of the tree"),
+  includeHidden: z.boolean().optional().default(false).describe("Include hidden files"),
+  customIgnore: z.array(z.string()).optional().describe("Additional folders to ignore")
 });
 
-// Dossiers à ignorer par défaut
+// Folders to ignore by default
 const DEFAULT_IGNORE_FOLDERS = [
   'node_modules',
   'dist',
@@ -28,7 +28,7 @@ const DEFAULT_IGNORE_FOLDERS = [
   'Thumbs.db'
 ];
 
-// Extensions de fichiers texte pour le comptage des lignes
+// Text file extensions for line counting
 const TEXT_EXTENSIONS = [
   '.ts', '.js', '.tsx', '.jsx', '.json', '.md', '.txt', '.css', '.scss', '.html',
   '.xml', '.yaml', '.yml', '.toml', '.ini', '.cfg', '.conf', '.py', '.java',
@@ -84,7 +84,7 @@ async function countLines(filePath: string): Promise<number> {
     const content = await fs.readFile(filePath, 'utf-8');
     return content.split('\n').length;
   } catch (error) {
-    // Si on ne peut pas lire le fichier comme texte, retourner 0
+    // If the file cannot be read as text, return 0
     return 0;
   }
 }
@@ -103,7 +103,8 @@ async function scanDirectory(
   ignoreList: string[],
   includeHidden: boolean,
   maxDepth: number,
-  currentDepth: number = 0
+  currentDepth: number = 0,
+  basePath: string = dirPath
 ): Promise<FileInfo[]> {
   if (currentDepth >= maxDepth) {
     return [];
@@ -116,14 +117,15 @@ async function scanDirectory(
     
     for (const entry of entries) {
       const fullPath = path.join(dirPath, entry.name);
-      const relativePath = path.relative(process.cwd(), fullPath);
+      // Calculer le chemin relatif par rapport au basePath au lieu de process.cwd()
+      const relativePath = path.relative(basePath, fullPath);
       
-      // Ignorer les fichiers/dossiers cachés (commençant par .) si pas demandé explicitement
+      // Ignore hidden files/folders (starting with .) unless explicitly requested
       if (!includeHidden && entry.name.startsWith('.')) {
         continue;
       }
       
-      // Ignorer les dossiers dans la liste d'ignore
+      // Ignore folders in the ignore list
       if (entry.isDirectory() && ignoreList.includes(entry.name)) {
         continue;
       }
@@ -134,7 +136,8 @@ async function scanDirectory(
           ignoreList,
           includeHidden,
           maxDepth,
-          currentDepth + 1
+          currentDepth + 1,
+          basePath // Passer le basePath
         );
         
         items.push({
@@ -168,7 +171,8 @@ async function scanDirectory(
       }
     }
   } catch (error) {
-    // Ignorer les erreurs d'accès aux dossiers
+    // Ignore errors when accessing folders
+    console.error(`Error scanning directory ${dirPath}:`, error);
   }
   
   return items;
@@ -177,10 +181,10 @@ async function scanDirectory(
 function formatTree(items: FileInfo[], basePath: string): string {
   const result: string[] = [];
   
-  // Construire un arbre hiérarchique
+  // Build a hierarchical tree
   const tree: { [key: string]: FileInfo[] } = {};
   
-  // Organiser les éléments par parent
+  // Organize items by parent
   items.forEach(item => {
     const parentPath = path.dirname(item.path);
     const normalizedParent = parentPath === '.' ? '' : parentPath;
@@ -191,13 +195,13 @@ function formatTree(items: FileInfo[], basePath: string): string {
     tree[normalizedParent].push(item);
   });
   
-  // Trier chaque niveau
+  // Sort each level
   Object.keys(tree).forEach(key => {
     tree[key].sort((a, b) => {
-      // Dossiers avant fichiers
+      // Folders before files
       if (a.isDirectory && !b.isDirectory) return -1;
       if (!a.isDirectory && b.isDirectory) return 1;
-      // Puis alphabétiquement
+      // Then alphabetically
       return a.name.localeCompare(b.name);
     });
   });
@@ -205,7 +209,7 @@ function formatTree(items: FileInfo[], basePath: string): string {
   result.push('PROJECT_STRUCTURE:');
   result.push(basePath + '/');
   
-  // Fonction récursive pour afficher l'arbre
+  // Recursive function to display the tree
   function renderLevel(parentPath: string, depth: number) {
     const items = tree[parentPath] || [];
     
@@ -215,7 +219,7 @@ function formatTree(items: FileInfo[], basePath: string): string {
       
       if (item.isDirectory) {
         result.push(`${prefix}${item.name}/`);
-        // Récursion pour les sous-dossiers
+        // Recurse for subdirectories
         renderLevel(item.path, depth + 1);
       } else {
         let fileInfo = `${prefix}${item.name}`;
@@ -238,25 +242,37 @@ function formatTree(items: FileInfo[], basePath: string): string {
     });
   }
   
-  // Commencer au niveau racine
+  // Start at the root level
   renderLevel('', 0);
   
-  // Ajouter les dossiers ignorés
+  // Add statistics
+  const totalFiles = items.filter(item => !item.isDirectory).length;
+  const totalDirs = items.filter(item => item.isDirectory).length;
+  const totalLines = items
+    .filter(item => !item.isDirectory && item.lines !== undefined)
+    .reduce((sum, item) => sum + (item.lines || 0), 0);
+  
+  result.push('');
+  result.push(`${totalDirs} director${totalDirs !== 1 ? 'ies' : 'y'}, ${totalFiles} files`);
+  if (totalLines > 0) {
+    result.push(`Total lines of code: ${totalLines}`);
+  }
+  
+  // Add ignored folders
+  const targetDir = path.resolve(basePath);
   const ignoredInfo = DEFAULT_IGNORE_FOLDERS.filter(folder => 
-    fs.existsSync(path.join(process.cwd(), folder))
+    fs.existsSync(path.join(targetDir, folder))
   );
   
   if (ignoredInfo.length > 0) {
-    result.push('');
     result.push(`[IGNORED: ${ignoredInfo.join(', ')}]`);
   }
-  
   return result.join('\n');
 }
 
 export const listTreeTool = tool({
   name: 'listTree',
-  description: 'Affiche l\'arborescence des fichiers du répertoire de manière intelligente avec filtrage automatique et comptage des lignes',
+  description: 'Display a tree structure of files and directories in a given path, with details like line count for text files and size for binary files.',
   parameters: listTreeSchema,
   execute: async (args) => {
     const { 
@@ -268,17 +284,22 @@ export const listTreeTool = tool({
     
     const ignoreList = [...DEFAULT_IGNORE_FOLDERS, ...customIgnore];
     
-    if (!await fs.pathExists(targetPath)) {
-      throw new Error(`Le répertoire ${targetPath} n'existe pas`);
+    // Résoudre le chemin absolu
+    const resolvedPath = path.resolve(targetPath);
+    
+    if (!await fs.pathExists(resolvedPath)) {
+      throw new Error(`Directory ${targetPath} does not exist`);
     }
     
     const items = await scanDirectory(
-      targetPath,
+      resolvedPath,
       ignoreList,
       includeHidden,
-      maxDepth
+      maxDepth,
+      0,
+      resolvedPath // Passer le basePath
     );
     
-    return formatTree(items, path.basename(targetPath));
+    return formatTree(items, path.basename(resolvedPath));
   }
 });

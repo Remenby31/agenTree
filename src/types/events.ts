@@ -77,15 +77,15 @@ export interface ChildAgentEventData extends AgentEventData {
   childTask: string;
 }
 
-// Map des événements pour TypeScript
+// Event map for TypeScript
 export interface AgentEvents {
-  // Événements de cycle de vie de l'agent
+  // Agent lifecycle events
   'agentCreated': (data: AgentEventData) => void;
   'agentStarted': (data: AgentEventData) => void;
   'agentCompleted': (data: AgentResultEventData) => void;
   'agentError': (data: AgentErrorEventData) => void;
 
-  // Événements d'exécution
+  // Execution events
   'contextLoaded': (data: ContextLoadEventData) => void;
   'llmCall': (data: LLMCallEventData) => void;
   'toolCalls': (data: ToolCallEventData) => void;
@@ -93,11 +93,11 @@ export interface AgentEvents {
   'toolCallCompleted': (data: ToolCallCompletedEventData) => void;
   'streamChunk': (data: StreamChunkEventData) => void;
 
-  // Événements d'agents enfants
+  // Child agent events
   'childCreated': (data: ChildAgentEventData) => void;
 }
 
-// Helper pour créer les données d'événement
+// Helper to create event data
 export class EventDataBuilder {
   static createBaseEventData(agent: any): AgentEventData {
     return {

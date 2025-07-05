@@ -7,7 +7,7 @@ export interface StopAgentParams {
 
 export const stopAgentMetadata: ToolMetadata = {
   name: 'stopAgent',
-  description: 'Stop the current agent execution and return the final result',
+  description: 'Terminates the current agent\'s execution and returns the final result to the parent agent, indicating whether the task was completed successfully.',
   parameters: {
     type: 'object',
     properties: {

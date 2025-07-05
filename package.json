@@ -10,7 +10,7 @@
     "test": "jest",
     "clean": "rm -rf dist",
     "example": "ts-node examples/simple.ts",
-    "code": "ts-node examples/terminal.ts",
+    "code": "npx tsx examples/terminal.ts",
     "view": "ts-node scripts/viewer.ts",
     "cleanup": "ts-node scripts/cleanup.ts"
   },
