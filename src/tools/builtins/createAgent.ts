@@ -10,7 +10,7 @@ export interface CreateAgentParams {
 
 export const createAgentMetadata: ToolMetadata = {
   name: 'createAgent',
-  description: 'Creates a new child agent to perform a specific subtask, allowing for modular task management and enhanced parallel processing.',
+  description: 'Creates a new child agent to perform a specific subtask, allowing for modular task management and enhanced parallel processing. Before creating an agent, make sure to think about the very specific task you want it to perform, the outcome you expect, and the tools it will need (or default).',
   parameters: {
     type: 'object',
     properties: {
@@ -20,12 +20,12 @@ export const createAgentMetadata: ToolMetadata = {
       },
       task: {
         type: 'string', 
-        description: 'Task description for the child agent'
+        description: 'Task description for the child agent, which should be very specific and clear. This is the task the child agent will perform.'
       },
       context: {
         type: 'array',
         items: { type: 'string' },
-        description: 'Optional context (files, URLs, text) for the child agent'
+        description: 'Optional context (files paths, URLs) for the child agent, example: ["file1.txt", "https://example.com/resource"]'
       },
       tools: {
         type: 'array',

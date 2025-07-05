@@ -71,6 +71,9 @@ export class Context {
   }
 
   private static isUrl(item: string): boolean {
+    if (!item.startsWith('http://') && !item.startsWith('https://')) {
+      return false;
+    }
     try {
       new URL(item);
       return true;

@@ -45,7 +45,7 @@ const agent = new Agent({
   task: "Use the calculator tool to add 25 and 17, then use it again to multiply the result by 3. Show the calculations.",
   tools: [calculatorTool],
   apiKey,
-  model: "gpt-4o-mini",
+  model: "gpt-4.1-mini",
   maxDepth: 2,
   outputFile: false,
   streaming: false,

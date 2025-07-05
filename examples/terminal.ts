@@ -104,7 +104,7 @@ const agent = new Agent({
   task,
   tools: defaultTools,
   apiKey,
-  model: 'gpt-4o-mini',
+  model: 'gpt-4.1-mini',
   outputFile: false,
   streaming: true,
   maxDepth: 1
@@ -121,8 +121,7 @@ console.log(`└${horizontalLine}┘\n`);
 
 // Clean event handling
 agent.on('agentStarted', (data) => {
-  const prefix = getPrefix(data.name);
-  console.log(`${prefix} Starting...`);
+  //pass
 });
 
 agent.on('childCreated', (data) => {
@@ -153,16 +152,18 @@ agent.on('toolCallStarted', (data) => {
     const tools = `Tools: ${data.toolInput.tools ? data.toolInput.tools.join(', ') : 'default tools'}`;
     const systemPrompt = `System prompt: ${data.toolInput.systemPrompt || 'none'}`;
     
-    console.log(`${prefix} Creating child agent: ${task} ${dim}| ${context} | ${tools} | ${systemPrompt}${reset}`);
+    console.log(`${prefix} ${bold}+> Creating child agent:${reset} ${task} ${dim}| ${context} | ${tools} | ${systemPrompt}${reset}`);
   } else if (data.toolName === 'stopAgent') {
-    //pass
+    const result = `${bold}"${data.toolInput.result}"${reset}${dim}`;
+    const success = data.toolInput.success !== undefined ? `Success: ${data.toolInput.success}` : 'Success: true';
+    console.log(`${prefix} +> Stopping agent: ${result} | ${success}${reset}`);
   } else if (data.toolName === 'writeFile') {
     // For writeFile, we only display the fist 100 characters of the content
     // to avoid cluttering the terminal
     const filePath = data.toolInput.filePath || 'unknown';
     const fileContent = data.toolInput.content || 'empty';
     const truncatedContent = fileContent.length > 100 ? fileContent.slice(0, 100) + '...' : fileContent;
-    console.log(`${prefix} Writing to file: ${filePath} with content: "${truncatedContent}"`);
+    console.log(`${prefix} ${dim}Calling tool: ${data.toolName} for file ${filePath} with content: "${truncatedContent}"`);
   } else {
     console.log(`${prefix} ${dim}Calling tool: ${data.toolName} with input: ${JSON.stringify(data.toolInput)}${reset}`);
   }
@@ -191,19 +192,63 @@ agent.on('agentError', (data) => {
   console.error(`${prefix} Error: ${data.error}`);
 });
 
+
+
+
+
+
+// Ajouter cette variable globale avant les event listeners
+const streamingAgents = new Set<string>();
+// Ajouter un tracker pour l'agent actuellement en streaming
+let currentStreamingAgent: string | null = null;
+
+// Remplacer l'event listener streamChunk par celui-ci :
 agent.on('streamChunk', (data) => {
   const name = data.name || 'terminal-agent';
+  const content = data.chunk.content || '';
   
-  if (data.chunk.content && !thinkingAgents.has(name)) {
-    // First chunk for this agent, show that we are thinking
+  // Ignorer les tool calls, afficher seulement le contenu des messages
+  if (content) {
     const prefix = getPrefix(name);
-    console.log(`${prefix} ${dim}Thinking...${reset}`);
-    thinkingAgents.add(name);
+    
+    // Si c'est un nouvel agent qui commence à streamer ou si l'agent actuel change
+    if (!streamingAgents.has(name) || currentStreamingAgent !== name) {
+      // Si un autre agent était en train de streamer, terminer sa ligne
+      if (currentStreamingAgent && currentStreamingAgent !== name) {
+        process.stdout.write('\n');
+      }
+      
+      process.stdout.write(`${prefix} `);
+      streamingAgents.add(name);
+      currentStreamingAgent = name;
+    }
+    
+    // Gérer les retours à la ligne en préservant l'indentation
+    if (content.includes('\n')) {
+      const lines = content.split('\n');
+      
+      // Première ligne : afficher directement
+      process.stdout.write(lines[0]);
+      
+      // Lignes suivantes : ajouter le préfixe pour chaque nouvelle ligne
+      for (let i = 1; i < lines.length; i++) {
+        process.stdout.write('\n');
+        // Toujours afficher le préfixe, même pour les lignes vides
+        process.stdout.write(`${prefix} ${lines[i]}`);
+      }
+    } else {
+      // Afficher le contenu sans retour à la ligne
+      process.stdout.write(content);
+    }
   }
   
+  // Si c'est la fin du stream, nettoyer et ajouter un retour à la ligne
   if (data.chunk.done) {
-    // Cleanup when the stream is finished
-    thinkingAgents.delete(name);
+    streamingAgents.delete(name);
+    if (currentStreamingAgent === name) {
+      currentStreamingAgent = null;
+    }
+    process.stdout.write('\n');
   }
 });
 

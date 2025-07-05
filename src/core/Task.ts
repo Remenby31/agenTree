@@ -33,16 +33,17 @@ export class Task {
   }
 
   public getSystemPrompt(): string {
-    
+
     let prompt = `Your task: ${this.description}
 
-      You need to break down a complex task, create child agents with very specific roles, tasks and tools.
-      When you have completed your work, use the stopAgent tool to return your final result.`;
+      IMPORTANT : At the beginning and between each step, make a short sentence of what you are doing, and what you need to do next. Dont use a tool without explaining what you are doing and why. (1 line max)
+      When you have completed all your work, use the stopAgent tool to return your final result.`;
 
 
     if (this.systemPrompt) {
       prompt = `${this.systemPrompt} 
-      When you have completed your work, use the stopAgent tool to return your final result.`;
+      IMPORTANT : At the beginning and between each step, make a short sentence of what you are doing, and what you need to do next. Dont use a tool without explaining what you are doing and why. (1 line max)
+      When you have completed all your work, use the stopAgent tool to return your final result.`;
     }
 
     return prompt;

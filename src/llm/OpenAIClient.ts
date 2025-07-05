@@ -42,7 +42,7 @@ export class OpenAIClient extends LLMClient {
     const params: OpenAI.Chat.ChatCompletionCreateParams = {
       model: this.config.model,
       messages: openAIMessages,
-      temperature: 0.7
+      temperature: 0
     };
 
     if (tools && tools.length > 0) {
@@ -76,7 +76,7 @@ export class OpenAIClient extends LLMClient {
     const params: OpenAI.Chat.ChatCompletionCreateParams = {
       model: this.config.model,
       messages: openAIMessages,
-      temperature: 0.7,
+      temperature: 0,
       stream: true
     };
 
