@@ -4,25 +4,25 @@ import * as fs from 'fs-extra';
 import * as path from 'path';
 
 const writeFileSchema = z.object({
-  path: z.string().describe("Chemin du fichier à créer"),
-  content: z.string().describe("Contenu à écrire dans le fichier"),
-  overwrite: z.boolean().optional().default(false).describe("Autoriser l'écrasement si le fichier existe"),
+  path: z.string().describe("Path of the file to create"),
+  content: z.string().describe("Content to write into the file"),
+  overwrite: z.boolean().optional().default(false).describe("Allow overwriting if the file exists"),
 });
 
 export const writeFileTool = tool({
   name: 'writeFile',
-  description: 'Crée et écrit un nouveau fichier. Si le fichier existe déjà et que l’agent ne l’a pas lu, renvoie une erreur sauf si overwrite=true',
+  description: 'Creates and writes a new file. If the file already exists and the agent has not read it, it returns an error unless overwrite=true',
   parameters: writeFileSchema,
   execute: async (args) => {
     const { path: filePath, content, overwrite } = args;
     if (await fs.pathExists(filePath) && !overwrite) {
-      throw new Error(`Le fichier ${filePath} existe déjà. Utilisez overwrite=true pour l’écraser.`);
+      throw new Error(`File ${filePath} already exists. Use overwrite=true to overwrite it.`);
     }
     await fs.ensureDir(path.dirname(filePath));
     await fs.writeFile(filePath, content, 'utf-8');
-    return `Fichier ${filePath} créé avec succès (${content.length} caractères)`;
+    return `File ${filePath} created successfully (${content.length} characters)`;
   },
   errorFunction: (context, error) => {
-    return `Erreur lors de l'écriture du fichier: ${error.message}`;
+    return `Error writing file: ${error.message}`;
   }
 });
