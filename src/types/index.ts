@@ -1,23 +1,24 @@
-export interface AgentTreeConfig {
-  baseUrl?: string;           // URL du LLM (ex: https://api.openai.com)
-  model?: string;             // Modèle à utiliser
-  outputFile?: boolean;       // Activer/désactiver écriture fichiers (défaut: true)
-  outputFolder?: string;      // Dossier de sortie (défaut: .agentree)
-  apiKey?: string;           // Clé API
-  streaming?: boolean;        // Mode streaming (défaut: false)
-}
-
 export interface AgentConfig {
+  // Paramètres publics de l'agent (pour l'utilisateur)
   name: string;
   task: string;
   context?: string[];
   tools?: Tool[] | string[];
-  config?: AgentTreeConfig;
   maxDepth?: number;          // Profondeur max de l'arbre (défaut: 5)
+  systemPrompt?: string;      // Permet de surcharger le system prompt
+  
+  // Paramètres de configuration LLM (pour l'utilisateur)
+  baseUrl?: string;           // URL du LLM (ex: https://api.openai.com)
+  model?: string;             // Modèle à utiliser
+  apiKey?: string;            // Clé API
+  outputFile?: boolean;       // Activer/désactiver écriture fichiers (défaut: true)
+  outputFolder?: string;      // Dossier de sortie (défaut: .agentree)
+  streaming?: boolean;        // Mode streaming (défaut: false)
+  
+  // Paramètres internes (pour la création d'agents enfants)
   parentId?: string;
   depth?: number;
   parentPath?: string;
-  systemPrompt?: string;      // Permet de surcharger le system prompt
 }
 
 export interface AgentResult {

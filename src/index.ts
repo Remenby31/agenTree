@@ -1,6 +1,5 @@
 // Core exports
 export { Agent } from './core/Agent';
-export { Config } from './core/Config';
 export { Task } from './core/Task';
 export { Context } from './core/Context';
 

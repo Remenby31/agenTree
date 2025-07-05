@@ -55,11 +55,9 @@ const agent = new Agent({
   task: "Research latest developments in quantum computing",
   tools: [webSearchTool],
   maxDepth: 3,
-  config: {
-    model: "gpt-4o-mini",
-    apiKey: process.env.OPENAI_API_KEY,
-    outputFile: true
-  }
+  model: "gpt-4o-mini",
+  apiKey: process.env.OPENAI_API_KEY,
+  outputFile: true
 });
 
 const result = await agent.execute();
@@ -74,11 +72,13 @@ const result = await agent.execute();
 Every agent has access to:
 - `createAgent`: Spawn child agents for subtasks
 - `stopAgent`: Return final results
-- Default tools: `readFile`, `writeFile`, `searchTool`, `replaceFile`, `bash`
+
+and there are optional built-in tools for common tasks:
+- Default tools: `readFile`, `writeFile`, `listTree`, `searchTool`, `replaceFile`, `bash`
 
 → [Built-in tools reference](https://remenby31.github.io/agenTree/api/built-in-tools)
 
-### Tool Creation
+### Custom Tool Creation
 
 ```typescript
 const dbQueryTool = tool({
@@ -134,15 +134,6 @@ agent.on('toolCallCompleted', (data) => {
 });
 ```
 
-#### Hierarchical Logging
-
-```typescript
-agent.on('agentCreated', (data) => {
-  const indent = '  '.repeat(data.depth);
-  console.log(`${indent}🤖 ${data.name} (depth ${data.depth})`);
-});
-```
-
 #### Real-time Streaming
 
 ```typescript
@@ -175,29 +166,31 @@ agent.on('streamChunk', (data) => {
 
 ## Configuration
 
+Configure agent behavior directly in the constructor:
+
 ```typescript
-interface AgentTreeConfig {
-  baseUrl?: string;        // LLM endpoint
-  model?: string;          // Model name
-  apiKey?: string;         // API key
-  maxDepth?: number;       // Max hierarchy depth (default: 5)
-  outputFile?: boolean;    // Generate markdown reports (default: true)
-  outputFolder?: string;   // Output directory (default: .agentree)
-  streaming?: boolean;     // Enable streaming (default: false)
-}
+const agent = new Agent({
+  // Required
+  name: "agent-name",
+  task: "Task description",
+  
+  // Optional agent configuration
+  tools: [myTool1, myTool2],        // Custom tools
+  context: ["./file1.txt"],         // Context files/URLs
+  maxDepth: 5,                      // Max hierarchy depth (default: 5)
+  systemPrompt: "Custom prompt",    // Override system prompt
+  
+  // Optional LLM configuration
+  baseUrl: "https://api.openai.com/v1",  // LLM endpoint (default)
+  model: "gpt-4",                   // Model name (default: gpt-4)
+  apiKey: process.env.OPENAI_API_KEY,    // API key (required)
+  outputFile: true,                 // Generate reports (default: true)
+  outputFolder: ".agentree",        // Output directory (default)
+  streaming: false                  // Enable streaming (default: false)
+});
 ```
 
-### Environment Variables (to be changed in next update)
 
-```bash
-# OpenAI
-export OPENAI_API_KEY="your-key"
-
-# Custom endpoint
-export LLM_BASE_URL="https://your-llm-endpoint.com"
-```
-
-→ [Configuration guide](https://remenby31.github.io/agenTree/guide/configuration)
 
 ## Output Structure
 
@@ -256,10 +249,6 @@ npm run dev
 
 # Examples
 npm run example
-
-# View execution logs
-npm run view list
-npm run view show <run-id>
 
 # Cleanup
 npm run cleanup old --keep 10

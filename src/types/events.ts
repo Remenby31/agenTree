@@ -132,7 +132,7 @@ export class EventDataBuilder {
       ...this.createBaseEventData(agent),
       messageCount,
       availableTools,
-      model: agent.config.model
+      model: agent.model
     };
   }
 

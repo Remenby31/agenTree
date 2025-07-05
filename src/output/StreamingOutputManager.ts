@@ -1,4 +1,5 @@
-import { AgentTreeConfig, LLMMessage, ToolCall } from '../types';
+import { LLMMessage, ToolCall } from '../types';
+import { LLMConfig } from '../llm/LLMClient';
 import { 
   OutputPaths, 
   ExecutionEvent, 
@@ -21,7 +22,7 @@ export class StreamingOutputManager {
   };
 
   constructor(
-    private config: AgentTreeConfig,
+    private config: LLMConfig,
     private agentId: string,
     private agentName: string,
     private task: string,

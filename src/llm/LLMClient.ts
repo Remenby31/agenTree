@@ -1,9 +1,18 @@
-import { LLMMessage, LLMResponse, LLMStreamChunk, ToolMetadata, AgentTreeConfig } from '../types';
+import { LLMMessage, LLMResponse, LLMStreamChunk, ToolMetadata } from '../types';
+
+export interface LLMConfig {
+  baseUrl: string;
+  model: string;
+  apiKey: string;
+  outputFile: boolean;
+  outputFolder: string;
+  streaming: boolean;
+}
 
 export abstract class LLMClient {
-  protected config: AgentTreeConfig;
+  protected config: LLMConfig;
 
-  constructor(config: AgentTreeConfig) {
+  constructor(config: LLMConfig) {
     this.config = config;
   }
 

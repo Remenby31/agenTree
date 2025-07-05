@@ -44,13 +44,11 @@ const agent = new Agent({
   name: "test-agent",
   task: "Use the calculator tool to add 25 and 17, then use it again to multiply the result by 3. Show the calculations.",
   tools: [calculatorTool],
-  config: {
-    apiKey,
-    model: "gpt-4o-mini",
-    maxDepth: 2,
-    outputFile: true,
-    streaming: true,
-  }
+  apiKey,
+  model: "gpt-4o-mini",
+  maxDepth: 2,
+  outputFile: false,
+  streaming: false,
 });
 
 agent.on('agentCompleted', (result) => {

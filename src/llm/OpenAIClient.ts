@@ -1,11 +1,11 @@
 import OpenAI from 'openai';
-import { LLMClient } from './LLMClient';
-import { LLMMessage, LLMResponse, LLMStreamChunk, ToolMetadata, AgentTreeConfig, ToolCall } from '../types';
+import { LLMClient, LLMConfig } from './LLMClient';
+import { LLMMessage, LLMResponse, LLMStreamChunk, ToolMetadata, ToolCall } from '../types';
 
 export class OpenAIClient extends LLMClient {
   private client: OpenAI;
 
-  constructor(config: AgentTreeConfig) {
+  constructor(config: LLMConfig) {
     super(config);
     this.client = new OpenAI({
       apiKey: config.apiKey,
@@ -40,7 +40,7 @@ export class OpenAIClient extends LLMClient {
 
     const openAIMessages = this.convertMessages(messages);
     const params: OpenAI.Chat.ChatCompletionCreateParams = {
-      model: this.config.model!,
+      model: this.config.model,
       messages: openAIMessages,
       temperature: 0.7
     };
@@ -74,7 +74,7 @@ export class OpenAIClient extends LLMClient {
   ): AsyncGenerator<LLMStreamChunk, void, unknown> {
     const openAIMessages = this.convertMessages(messages);
     const params: OpenAI.Chat.ChatCompletionCreateParams = {
-      model: this.config.model!,
+      model: this.config.model,
       messages: openAIMessages,
       temperature: 0.7,
       stream: true

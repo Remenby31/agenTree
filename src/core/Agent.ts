@@ -3,7 +3,6 @@ import { EventEmitter } from 'events';
 import { 
   AgentConfig, 
   AgentResult, 
-  AgentTreeConfig, 
   LLMMessage, 
   ToolCall,
   ToolMetadata,
@@ -17,7 +16,6 @@ import {
   ToolCallCompletedEventData,
   StreamChunkEventData
 } from '../types/events';
-import { Config } from './Config';
 import { Task } from './Task';
 import { LLMClient } from '../llm/LLMClient';
 import { OpenAIClient } from '../llm/OpenAIClient';
@@ -36,7 +34,6 @@ interface TypedEventEmitter {
 
 export class Agent extends EventEmitter implements TypedEventEmitter {
   private readonly id: string;
-  private readonly config: AgentTreeConfig;
   private readonly task: Task;
   private readonly tools: Tool[];
   private readonly toolNames: string[];
@@ -44,6 +41,14 @@ export class Agent extends EventEmitter implements TypedEventEmitter {
   private readonly parentId?: string;
   private readonly depth: number;
   private readonly maxDepth: number;
+  
+  // Configuration parameters (formerly in AgentTreeConfig)
+  private readonly baseUrl: string;
+  private readonly _model: string;
+  private readonly apiKey: string;
+  private readonly outputFile: boolean;
+  private readonly outputFolder: string;
+  private readonly streaming: boolean;
   
   private messages: LLMMessage[] = [];
   private children: Agent[] = [];
@@ -56,8 +61,22 @@ export class Agent extends EventEmitter implements TypedEventEmitter {
   constructor(agentConfig: AgentConfig) {
     super();
     this.id = uuidv4();
-    this.config = Config.merge(agentConfig.config);
-    Config.validate(this.config);
+    
+    // Initialize configuration parameters with defaults
+    this.baseUrl = agentConfig.baseUrl || 'https://api.openai.com/v1';
+    this._model = agentConfig.model || 'gpt-4';
+    this.apiKey = agentConfig.apiKey || '';
+    this.outputFile = agentConfig.outputFile ?? true;
+    this.outputFolder = agentConfig.outputFolder || '.agentree';
+    this.streaming = agentConfig.streaming || false;
+    
+    // Validate required parameters
+    if (!this.apiKey) {
+      throw new Error('API key is required');
+    }
+    if (!this._model) {
+      throw new Error('Model is required');
+    }
     
     this.task = new Task(
       agentConfig.name,
@@ -86,14 +105,29 @@ export class Agent extends EventEmitter implements TypedEventEmitter {
     this.depth = agentConfig.depth || 0;
     this.maxDepth = agentConfig.maxDepth ?? 5;
     
-    // Initialize LLM client - for now only OpenAI
-    this.llmClient = new OpenAIClient(this.config);
+    // Validate maxDepth
+    if (this.maxDepth < 1 || this.maxDepth > 10) {
+      throw new Error('maxDepth must be between 1 and 10');
+    }
     
-
+    // Create config object for LLM client
+    const config = {
+      baseUrl: this.baseUrl,
+      model: this._model,
+      apiKey: this.apiKey,
+      outputFile: this.outputFile,
+      outputFolder: this.outputFolder,
+      streaming: this.streaming
+    };
+    
+    
+    // Initialize LLM client - for now only OpenAI
+    this.llmClient = new OpenAIClient(config);
+    
     // Initialize streaming output manager
-    if (this.config.outputFile) {
+    if (this.outputFile) {
       this.outputManager = new StreamingOutputManager(
-        this.config,
+        config,
         this.id,
         this.task.name,
         this.task.description,
@@ -147,7 +181,6 @@ export class Agent extends EventEmitter implements TypedEventEmitter {
           await this.outputManager.recordMessage(message);
         }
       }
-      
       // Main execution loop
       while (!this.isCompleted) {
         await this.executionStep();
@@ -218,7 +251,7 @@ export class Agent extends EventEmitter implements TypedEventEmitter {
     
     // Call LLM
     let response: any;
-    if (this.config.streaming) {
+    if (this.streaming) {
       response = await this.handleStreamingLLMCall(availableTools);
     } else {
       response = await this.llmClient.chat(
@@ -415,7 +448,13 @@ export class Agent extends EventEmitter implements TypedEventEmitter {
       task: params.task,
       context: params.context,
       tools: cleanedTools,
-      config: this.config,
+      // Pass parent configuration to child
+      baseUrl: this.baseUrl,
+      model: this._model,
+      apiKey: this.apiKey,
+      outputFile: this.outputFile,
+      outputFolder: this.outputFolder,
+      streaming: this.streaming,
       maxDepth: this.maxDepth,
       parentId: this.id,
       depth: this.depth + 1,
@@ -587,6 +626,7 @@ export class Agent extends EventEmitter implements TypedEventEmitter {
   public get agentName(): string { return this.task.name; }
   public get agentDepth(): number { return this.depth; }
   public get agentChildren(): Agent[] { return this.children; }
+  public get model(): string { return this._model; }
 
   // Méthodes typées pour EventEmitter
   public on<K extends keyof AgentEvents>(event: K, listener: AgentEvents[K]): this {
